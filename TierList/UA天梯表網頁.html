@@ -48,9 +48,17 @@
         loadCardsFromSheet()
     ])
     .then(function () {
-        $('#card-filter').on('change', function () {
-            filterCards($(this).val());
-        });
+        // 統一的篩選觸發函式：分類篩選與顏色篩選共用
+        // 每次觸發都會同時讀取兩個下拉選單目前的值，
+        // 這樣不管使用者先選哪一個、或兩個都選，篩選結果都會正確取交集
+        function triggerFilter() {
+            const selectedCategories = $('#card-filter').val();
+            const selectedColors = $('#color-filter').val();
+            filterCards(selectedCategories, selectedColors);
+        }
+ 
+        $('#card-filter').on('change', triggerFilter);
+        $('#color-filter').on('change', triggerFilter);
     })
     .catch(function (err) {
         $('#card-loading').html('❌ 資料載入失敗，請重新整理頁面。');
