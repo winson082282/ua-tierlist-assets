@@ -102,18 +102,22 @@ async function loadFilterOptions() {
         const lines = csvText.trim().split('\n');
         const cards = [];
 
-        for (let i = 1; i < lines.length; i++) { // 第 1 行為標題列，從第 2 行開始
+        for (let i = 1; i < lines.length; i++) {
             const fields = splitCSVLine(lines[i].trim());
             if (!fields || fields.length < 3) continue;
-
+        
             const imgurl = 'https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets/TierList_DeckIcon/';
             const score = parseInt(fields[0]);
-            const alt = fields[1] + ',' + fields[2] + ',' + fields[3] + ',' + fields[4] || '';
-            const src = fields[4] ? imgurl + fields[4].trim() + '.jpg' : defaultImg;
-            const href = fields[6] ? fields[6].trim() : null;
-
+            const category = fields[1] ? fields[1].trim() : '';
+            const series = fields[2] ? fields[2].trim() : '';
+            const color   = fields[3] ? fields[3].trim() : '';
+            const iconName = fields[4] ? fields[4].trim() : '';
+            const href = fields[5] ? fields[5].trim() : null;
+            const cardName = fields[6] ? fields[6].trim() : ''; // 如果有卡片名稱可以放這
+            const src  = iconName ? imgurl + iconName + '.jpg' : defaultImg;
+        
             if (!isNaN(score) && src) {
-                cards.push({ score, alt, src, href: href || null });
+                cards.push({ score, category, color, series, cardName, src, href: href || null });
             }
         }
         return cards;
@@ -156,7 +160,13 @@ async function loadFilterOptions() {
             html += `<div class="card-grid-container">`;
 
             cards.filter(c => c.score === score).forEach(card => {
-                const img = `<img alt="${card.alt}" border="0" width="100" src="${card.src}" onerror="this.onerror=null; this.src='${defaultImg}';" />`;
+                const img = `<img
+                    alt="${card.cardName || card.category}"
+                    data-category="${card.category}"
+                    data-color="${card.color}"
+                    data-series="${card.series}"
+                    border="0" width="100" src="${card.src}"
+                    onerror="this.onerror=null; this.src='${defaultImg}';" />`;
                 const inner = card.href
                     ? `<a href="${card.href}" target="_blank">${img}</a>`
                     : img;
@@ -171,34 +181,35 @@ async function loadFilterOptions() {
 
     // --- 篩選邏輯 ---
     function filterCards(selectedCategories, selectedColors) {
-    const hasCategory = selectedCategories && selectedCategories.length > 0;
-    const hasColor    = selectedColors    && selectedColors.length    > 0;
-
-    // 兩個都沒選 → 全部顯示
-    if (!hasCategory && !hasColor) {
-        $('.card-grid-item').show();
-        $('h2[class^="score-"]').show();
-        return;
-    }
-
-    $('.card-grid-item').hide();
-
-    $('.card-grid-item img').each(function () {
-        const altText = $(this).attr('alt') || '';
-
-        const categoryMatch = !hasCategory || selectedCategories.some(val => altText.indexOf(val) !== -1);
-        const colorMatch    = !hasColor    || selectedColors.some(val => altText.indexOf(val) !== -1);
-
-        if (categoryMatch && colorMatch) {
-            $(this).closest('.card-grid-item').show();
+        const hasCategory = selectedCategories && selectedCategories.length > 0;
+        const hasColor    = selectedColors    && selectedColors.length    > 0;
+        
+        if (!hasCategory && !hasColor) {
+            $('.card-grid-item').show();
+            $('h2[class^="score-"]').show();
+            return;
         }
-    });
-
-    $('h2[class^="score-"]').each(function () {
-        const hasVisible = $(this).next('.card-grid-container').find('.card-grid-item:visible').length > 0;
-        $(this).toggle(hasVisible);
-    });
-}
+    
+        $('.card-grid-item').hide();
+    
+        $('.card-grid-item img').each(function () {
+            const $img = $(this);
+            const category = $img.data('category') || '';
+            const color    = $img.data('color') || '';
+        
+            const categoryMatch = !hasCategory || selectedCategories.includes(category);
+            const colorMatch    = !hasColor    || selectedColors.includes(color);
+        
+            if (categoryMatch && colorMatch) {
+                $img.closest('.card-grid-item').show();
+            }
+        });
+    
+        $('h2[class^="score-"]').each(function () {
+            const hasVisible = $(this).next('.card-grid-container').find('.card-grid-item:visible').length > 0;
+            $(this).toggle(hasVisible);
+        });
+    }
 </script>
 
 <style>
