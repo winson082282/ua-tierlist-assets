@@ -1,0 +1,357 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+<div style="margin-bottom: 15px; text-align: center;">
+    <select id="card-filter" multiple="multiple" style="width: 400px;"></select>
+    <select id="color-filter" multiple="multiple" style="width: 400px;">
+        <option value="黃">黃</option>
+        <option value="紫">紫</option>
+        <option value="藍">藍</option>
+        <option value="綠">綠</option>
+        <option value="紅">紅</option>
+    </select>
+</div>
+
+<div id="card-loading" style="text-align:center; padding: 20px;">⏳ 資料載入中...</div>
+<div id="card-display"></div>
+
+<!--引入 jQuery 與 Select2 的 JS-->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<script>
+    //Google Sheet CSV 網址
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=0&single=true&output=csv';
+    // 選項分頁
+    const FILTER_OPTIONS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=1050221666&single=true&output=csv';
+
+    $(document).ready(function () {
+
+        $('#card-filter').select2({
+            placeholder: "請選擇分類...",
+            allowClear: true
+        });
+
+        // 第二個 select 也初始化 Select2
+        $('#color-filter').select2({
+            placeholder: "請選擇顏色...",
+            allowClear: true
+        });
+
+        // 同時載入選項與卡片資料
+    Promise.all([
+        loadFilterOptions(),
+        loadCardsFromSheet()
+    ])
+    .then(function () {
+        $('#card-filter').on('change', function () {
+            filterCards($(this).val());
+        });
+    })
+    .catch(function (err) {
+        $('#card-loading').html('❌ 資料載入失敗，請重新整理頁面。');
+        console.error('Google Sheet 讀取錯誤：', err);
+    });
+});
+
+// ★ 從選項分頁動態載入 <option>
+async function loadFilterOptions() {
+    const response = await fetch(FILTER_OPTIONS_URL);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+    const csvText = await response.text();
+    const lines = csvText.trim().split('\n');
+    const select = document.getElementById('card-filter');
+
+    for (let i = 1; i < lines.length; i++) { // 第 1 行為標題列
+        const fields = splitCSVLine(lines[i].trim());
+        if (!fields || fields.length < 2) continue;
+
+        const value = fields[0].trim();
+        const label = fields[1].trim();
+        if (!value || !label) continue;
+
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        select.appendChild(option);
+    }
+
+    // 重新初始化 Select2（讓新選項生效）
+    $('#card-filter').trigger('change.select2');
+}
+
+    // --- 從 Google Sheet 讀取並渲染 ---
+    async function loadCardsFromSheet() {
+        const response = await fetch(SHEET_CSV_URL);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        const csvText = await response.text();
+        const cards = parseCSV(csvText);
+        renderCards(cards);
+
+        document.getElementById('card-loading').style.display = 'none';
+    }
+
+    // --- 解析 CSV（支援含逗號的欄位，有引號包覆的情況）---
+    function parseCSV(csvText) {
+        const lines = csvText.trim().split('\n');
+        const cards = [];
+
+        for (let i = 1; i < lines.length; i++) { // 第 1 行為標題列，從第 2 行開始
+            const fields = splitCSVLine(lines[i].trim());
+            if (!fields || fields.length < 3) continue;
+
+            const imgurl = 'https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets/TierList_DeckIcon/';
+            const score = parseInt(fields[0]);
+            const alt = fields[1] + ',' + fields[2] + ',' + fields[3] + ',' + fields[4] || '';
+            const src = fields[4] ? imgurl + fields[4].trim() + '.jpg' : defaultImg;
+            const href = fields[6] ? fields[6].trim() : null;
+
+            if (!isNaN(score) && src) {
+                cards.push({ score, alt, src, href: href || null });
+            }
+        }
+        return cards;
+    }
+
+    // --- CSV 欄位分割（正確處理引號） ---
+    function splitCSVLine(line) {
+        const fields = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') {
+                if (inQuotes && line[i + 1] === '"') {
+                    current += '"'; i++; // 跳脫的 ""
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (ch === ',' && !inQuotes) {
+                fields.push(current); current = '';
+            } else {
+                current += ch;
+            }
+        }
+        fields.push(current);
+        return fields;
+    }
+
+    // --- 動態產生卡片 HTML ---
+    function renderCards(cards) {
+        const scores = [...new Set(cards.map(c => c.score))].sort((a, b) => b - a);
+        const container = document.getElementById('card-display');
+        const defaultImg = 'https://placehold.co/100x100';
+        let html = '';
+
+        scores.forEach(score => {
+            const pad = String(score).padStart(2, '0');
+            html += `<h2 class="score-${pad}" style="text-align:center;">${score}分</h2>`;
+            html += `<div class="card-grid-container">`;
+
+            cards.filter(c => c.score === score).forEach(card => {
+                const img = `<img alt="${card.alt}" border="0" width="100" src="${card.src}" onerror="this.onerror=null; this.src='${defaultImg}';" />`;
+                const inner = card.href
+                    ? `<a href="${card.href}" target="_blank">${img}</a>`
+                    : img;
+                html += `<div class="card-grid-item">${inner}</div>`;
+            });
+
+            html += `</div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    // --- 篩選邏輯 ---
+    function filterCards(selectedCategories, selectedColors) {
+    const hasCategory = selectedCategories && selectedCategories.length > 0;
+    const hasColor    = selectedColors    && selectedColors.length    > 0;
+
+    // 兩個都沒選 → 全部顯示
+    if (!hasCategory && !hasColor) {
+        $('.card-grid-item').show();
+        $('h2[class^="score-"]').show();
+        return;
+    }
+
+    $('.card-grid-item').hide();
+
+    $('.card-grid-item img').each(function () {
+        const altText = $(this).attr('alt') || '';
+
+        const categoryMatch = !hasCategory || selectedCategories.some(val => altText.indexOf(val) !== -1);
+        const colorMatch    = !hasColor    || selectedColors.some(val => altText.indexOf(val) !== -1);
+
+        if (categoryMatch && colorMatch) {
+            $(this).closest('.card-grid-item').show();
+        }
+    });
+
+    $('h2[class^="score-"]').each(function () {
+        const hasVisible = $(this).next('.card-grid-container').find('.card-grid-item:visible').length > 0;
+        $(this).toggle(hasVisible);
+    });
+}
+</script>
+
+<style>
+    .card-grid-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        /* 卡片與卡片之間的間距 */
+        justify-content: left;
+        width: 100%;
+        margin-bottom: 25px;
+        box-sizing: border-box;
+    }
+
+    .card-grid-item {
+        width: 100px;
+        /* 剛好等於卡片寬度，無多餘留白 */
+        padding: 0px;
+        /* 移除內距 */
+        border: 0px;
+        /* 徹底移除白色框 */
+        background-color: transparent;
+        /* 背景透明 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+    }
+
+        .card-grid-item img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+    .score-10 {
+        background-color: #ff6b6b;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-09 {
+        background-color: #f39c11;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-08 {
+        background-color: #f1c40f;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-07 {
+        background-color: #9fe2bf;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-06 {
+        background-color: #80e1ab;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-05 {
+        background-color: #4ecdc4;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-04 {
+        background-color: #fed700;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-03 {
+        background-color: #fea500;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-02 {
+        background-color: #fd79a8;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-01 {
+        background-color: #e84c3d;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .score-00 {
+        background-color: #c1392b;
+        color: #000000;
+        font-weight: bold;
+        padding: 10px 15px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+</style>
