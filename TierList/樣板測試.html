@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Union Arena 牌組環境天梯表</title>
+</head>
+<body>
+
+  <div class="tier-list-container">
+    <div class="tier-list-header">
+      <h1>🃏 Union Arena 環境天梯表</h1>
+      <p>更新時間：2026/07</p>
+    </div>
+
+    <div id="category-filter-bar" class="category-filter-bar"></div>
+
+    <!-- JS 會把 1~10 分的天梯網格自動塞進這裡 -->
+    <div id="tier-rows-container" class="tier-rows"></div>
+  </div>
+
+<script>
+  // 1. 初始化天梯牌組的資料清單
+// 你可以直接把每張牌組的 category 改成自己的分類，例如：快攻、控場、增益、爆發、節奏
+const deckData = [
+  { name: "紅魯路修", score: 10, color: "ua-red", image: "https://picsum.photos/200?random=10", tag: "環境Top", category: "快攻" },
+  { name: "紫一護", score: 10, color: "ua-purple", image: "https://picsum.photos/200?random=11", tag: "上位獲獎", category: "控場" },
+  { name: "藍史萊姆", score: 5, color: "ua-blue", image: "https://picsum.photos/200?random=12", tag: "", category: "增益" },
+];
+const colors = ['ua-red', 'ua-green', 'ua-yellow', 'ua-blue', 'ua-purple'];
+const testTags = ['環境Top', '新卡上市', '構築推薦', ''];
+const categories = ['快攻', '控場', '增益', '爆發', '節奏'];
+
+// --- 【測試資料生成器】 ---
+for (let score = 1; score <= 10; score++) {
+  if (score !== 5) {
+    deckData.push({
+      name: `級距 ${score} 牌組`,
+      score: score,
+      color: colors[score % 5],
+      image: `https://picsum.photos/200?random=${score + 100}`,
+      tag: testTags[score % testTags.length],
+      category: categories[score % categories.length]
+    });
+  }
+}
+
+for (let i = 1; i <= 61; i++) {
+  deckData.push({
+    name: `5分隊伍-${i}`,
+    score: 5,
+    color: colors[i % 5],
+    image: `https://picsum.photos/200?random=${500 + i}`,
+    tag: testTags[i % testTags.length],
+    category: categories[i % categories.length]
+  });
+}
+// ---------------------------------
+
+const container = document.getElementById('tier-rows-container');
+const filterBar = document.getElementById('category-filter-bar');
+let selectedCategory = '';
+
+function getVisibleCategories() {
+  return [...new Set(deckData.map(deck => deck.category).filter(Boolean))];
+}
+
+function renderFilterButtons() {
+  filterBar.innerHTML = '';
+
+  const allButton = document.createElement('button');
+  allButton.className = `filter-button${selectedCategory === '' ? ' active' : ''}`;
+  allButton.textContent = '全部';
+  allButton.addEventListener('click', () => {
+    selectedCategory = '';
+    renderFilterButtons();
+    renderTierRows();
+  });
+  filterBar.appendChild(allButton);
+
+  getVisibleCategories().forEach(category => {
+    const button = document.createElement('button');
+    button.className = `filter-button${selectedCategory === category ? ' active' : ''}`;
+    button.textContent = category;
+    button.addEventListener('click', () => {
+      selectedCategory = selectedCategory === category ? '' : category;
+      renderFilterButtons();
+      renderTierRows();
+    });
+    filterBar.appendChild(button);
+  });
+}
+
+function renderTierRows() {
+  container.innerHTML = '';
+
+  for (let score = 10; score >= 1; score--) {
+    const rowElement = document.createElement('div');
+    rowElement.className = `tier-row rank-${score}`;
+
+    const labelElement = document.createElement('div');
+    labelElement.className = 'tier-label';
+    labelElement.innerText = `${score} 分`;
+
+    const contentElement = document.createElement('div');
+    contentElement.className = 'tier-content';
+
+    const currentDecks = deckData.filter(deck => deck.score === score);
+
+    currentDecks.forEach(deck => {
+      const isActive = !selectedCategory || deck.category === selectedCategory;
+      const cardElement = document.createElement('div');
+      cardElement.className = `deck-card ${deck.color}${isActive ? ' is-active' : ' is-dimmed'}`;
+
+      const tagHTML = deck.tag ? `<span class="deck-tag">${deck.tag}</span>` : '';
+      const categoryHTML = deck.category ? `<button type="button" class="deck-category-chip">${deck.category}</button>` : '';
+
+      cardElement.innerHTML = `
+        ${tagHTML}
+        <img src="${deck.image}" alt="${deck.name}" loading="lazy">
+        ${categoryHTML}
+        <div class="deck-name">${deck.name}</div>
+      `;
+
+      const categoryButton = cardElement.querySelector('.deck-category-chip');
+      if (categoryButton) {
+        categoryButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          selectedCategory = selectedCategory === deck.category ? '' : deck.category;
+          renderFilterButtons();
+          renderTierRows();
+        });
+      }
+
+      contentElement.appendChild(cardElement);
+    });
+
+    rowElement.appendChild(labelElement);
+    rowElement.appendChild(contentElement);
+    container.appendChild(rowElement);
+  }
+}
+
+renderFilterButtons();
+renderTierRows();
+</script>
+<style>
+/* 基礎設定 */
+body {
+  background-color: #121214;
+  font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  color: #e2e8f0;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.tier-list-container {
+  width: 100%;
+  max-width: 1400px;
+}
+
+/* 標題區 */
+.tier-list-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.tier-list-header h1 {
+  font-size: 2.2rem;
+  background: linear-gradient(45deg, #ff4e50, #f9d423);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 5px;
+}
+.tier-list-header p {
+  color: #64748b;
+  margin: 0;
+}
+
+.category-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: #23232d;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+}
+
+.filter-button {
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #343443;
+  color: #f8fafc;
+  font-size: 0.9rem;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.filter-button:hover {
+  transform: translateY(-1px);
+}
+
+.filter-button.active {
+  background: linear-gradient(90deg, #ff4e50, #f9d423);
+  color: #111;
+  font-weight: 700;
+}
+
+/* 天梯表整體外框 */
+.tier-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #1e1e24;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* 單一級距行 */
+.tier-row {
+  display: flex;
+  background: #272730;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 左側分數標籤區 */
+.tier-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  min-width: 90px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.rank-10 .tier-label { background: linear-gradient(135deg, #ff0055, #990022); }
+.rank-9 .tier-label  { background: linear-gradient(135deg, #ff5500, #aa3300); }
+.rank-8 .tier-label  { background: linear-gradient(135deg, #ffaa00, #aa7700); }
+.rank-7 .tier-label  { background: linear-gradient(135deg, #ffcc00, #aa8800); }
+.rank-6 .tier-label  { background: linear-gradient(135deg, #aacc00, #668800); }
+.rank-5 .tier-label  { background: linear-gradient(135deg, #00cc55, #007733); }
+.rank-4 .tier-label  { background: linear-gradient(135deg, #00cccc, #007777); }
+.rank-3 .tier-label  { background: linear-gradient(135deg, #0055ff, #0022aa); }
+.rank-2 .tier-label  { background: linear-gradient(135deg, #5500ff, #2200aa); }
+.rank-1 .tier-label  { background: linear-gradient(135deg, #444444, #222222); }
+
+.tier-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 10px;
+  padding: 15px;
+  flex-grow: 1;
+}
+
+.deck-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+  cursor: pointer;
+  background-color: #1a1a1f;
+}
+
+.deck-card:hover {
+  transform: scale(1.08);
+  z-index: 5;
+}
+
+.deck-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.deck-card.is-dimmed {
+  opacity: 0.35;
+  filter: grayscale(0.7) brightness(0.7);
+}
+
+.deck-card.is-active {
+  border-width: 3px;
+  box-shadow: 0 0 14px rgba(255,255,255,0.25);
+}
+
+.deck-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.85);
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 3px 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.deck-card:hover .deck-name,
+.deck-card.is-active .deck-name {
+  opacity: 1;
+}
+
+.deck-category-chip {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+}
+
+.deck-category-chip:hover {
+  background: #1d4ed8;
+}
+
+.ua-red { border-color: #ff4757; box-shadow: 0 0 6px rgba(255, 71, 87, 0.3); }
+.ua-green { border-color: #2ed573; box-shadow: 0 0 6px rgba(46, 213, 115, 0.3); }
+.ua-yellow { border-color: #ffa502; box-shadow: 0 0 6px rgba(255, 165, 2, 0.3); }
+.ua-blue { border-color: #1e90ff; box-shadow: 0 0 6px rgba(30, 144, 255, 0.3); }
+.ua-purple { border-color: #9b59b6; box-shadow: 0 0 6px rgba(155, 89, 182, 0.3); }
+.ua-red:hover { box-shadow: 0 0 12px rgba(255, 71, 87, 0.8); }
+.ua-green:hover { box-shadow: 0 0 12px rgba(46, 213, 115, 0.8); }
+.ua-yellow:hover { box-shadow: 0 0 12px rgba(255, 165, 2, 0.8); }
+.ua-blue:hover { box-shadow: 0 0 12px rgba(30, 144, 255, 0.8); }
+.ua-purple:hover { box-shadow: 0 0 12px rgba(155, 89, 182, 0.8); }
+
+.deck-tag {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 3;
+  background: linear-gradient(135deg, #ff0055, #ff5500);
+  color: #ffffff;
+  font-size: 0.6rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .tier-row {
+    flex-direction: column;
+  }
+  .tier-label {
+    width: 100%;
+    height: 35px;
+    min-height: 35px;
+    font-size: 1.1rem;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .tier-content {
+    grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+    padding: 10px;
+    gap: 6px;
+  }
+}
+</style>
+</body>
+</html>
