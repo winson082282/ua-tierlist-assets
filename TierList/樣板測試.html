@@ -13,7 +13,7 @@
       <p>更新時間：2026/07</p>
     </div>
 
-    <div id="category-filter-bar" class="category-filter-bar"></div>
+    <div id="category-filter-bar" class="category-filter-bar" style="display: none;"></div>
 
     <!-- JS 會把 1~10 分的天梯網格自動塞進這裡 -->
     <div id="tier-rows-container" class="tier-rows"></div>
@@ -109,30 +109,41 @@ function renderTierRows() {
 
     currentDecks.forEach(deck => {
       const isActive = !selectedCategory || deck.category === selectedCategory;
+      
+      // 创建包装容器
+      const wrapperElement = document.createElement('div');
+      wrapperElement.className = 'deck-wrapper';
+      
+      // 创建卡片
       const cardElement = document.createElement('div');
       cardElement.className = `deck-card ${deck.color}${isActive ? ' is-active' : ' is-dimmed'}`;
 
       const tagHTML = deck.tag ? `<span class="deck-tag">${deck.tag}</span>` : '';
-      const categoryHTML = deck.category ? `<button type="button" class="deck-category-chip">${deck.category}</button>` : '';
 
       cardElement.innerHTML = `
         ${tagHTML}
         <img src="${deck.image}" alt="${deck.name}" loading="lazy">
-        ${categoryHTML}
         <div class="deck-name">${deck.name}</div>
       `;
 
-      const categoryButton = cardElement.querySelector('.deck-category-chip');
-      if (categoryButton) {
+      wrapperElement.appendChild(cardElement);
+
+      // 创建分类按钮，在卡片外面
+      if (deck.category) {
+        const categoryButton = document.createElement('button');
+        categoryButton.type = 'button';
+        categoryButton.className = 'deck-category-chip';
+        categoryButton.textContent = deck.category;
         categoryButton.addEventListener('click', (event) => {
           event.stopPropagation();
           selectedCategory = selectedCategory === deck.category ? '' : deck.category;
           renderFilterButtons();
           renderTierRows();
         });
+        wrapperElement.appendChild(categoryButton);
       }
 
-      contentElement.appendChild(cardElement);
+      contentElement.appendChild(wrapperElement);
     });
 
     rowElement.appendChild(labelElement);
@@ -141,19 +152,19 @@ function renderTierRows() {
   }
 }
 
-renderFilterButtons();
 renderTierRows();
 </script>
 <style>
-/* 基礎設定 */
+/* ★ 淡雅奶油主題 - 基礎設定 */
 body {
-  background-color: #121214;
+  background: linear-gradient(135deg, #faf6f0 0%, #fdfbf7 100%);
   font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-  color: #e2e8f0;
+  color: #6b5844;
   margin: 0;
   padding: 20px;
   display: flex;
   justify-content: center;
+  min-height: 100vh;
 }
 
 .tier-list-container {
@@ -166,15 +177,19 @@ body {
   text-align: center;
   margin-bottom: 20px;
 }
+
 .tier-list-header h1 {
   font-size: 2.2rem;
-  background: linear-gradient(45deg, #ff4e50, #f9d423);
+  font-weight: 700;
+  background: linear-gradient(45deg, #c17a6a, #d4a574);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 5px;
 }
+
 .tier-list-header p {
-  color: #64748b;
+  color: #7d6b5c;
+  font-size: 0.95rem;
   margin: 0;
 }
 
@@ -183,31 +198,37 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
-  padding: 10px 12px;
-  background: #23232d;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(93, 74, 56, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .filter-button {
-  border: none;
-  cursor: pointer;
-  padding: 6px 10px;
+  padding: 6px 12px;
+  border: 1px solid rgba(93, 74, 56, 0.2);
   border-radius: 999px;
-  background: #343443;
-  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.7);
+  color: #5d4a38;
   font-size: 0.9rem;
-  transition: transform 0.2s ease, background 0.2s ease;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .filter-button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .filter-button.active {
-  background: linear-gradient(90deg, #ff4e50, #f9d423);
-  color: #111;
+  background: linear-gradient(135deg, #d4a574 0%, #c8956e 100%);
+  border-color: #c17a6a;
+  color: #fff;
   font-weight: 700;
+  box-shadow: 0 4px 12px rgba(193, 122, 106, 0.25);
 }
 
 /* 天梯表整體外框 */
@@ -215,18 +236,20 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: #1e1e24;
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 /* 單一級距行 */
 .tier-row {
   display: flex;
-  background: #272730;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* 左側分數標籤區 */
@@ -239,20 +262,20 @@ body {
   font-size: 1.4rem;
   font-weight: bold;
   color: #fff;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-  border-right: 1px solid rgba(255,255,255,0.05);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.rank-10 .tier-label { background: linear-gradient(135deg, #ff0055, #990022); }
-.rank-9 .tier-label  { background: linear-gradient(135deg, #ff5500, #aa3300); }
-.rank-8 .tier-label  { background: linear-gradient(135deg, #ffaa00, #aa7700); }
-.rank-7 .tier-label  { background: linear-gradient(135deg, #ffcc00, #aa8800); }
-.rank-6 .tier-label  { background: linear-gradient(135deg, #aacc00, #668800); }
-.rank-5 .tier-label  { background: linear-gradient(135deg, #00cc55, #007733); }
-.rank-4 .tier-label  { background: linear-gradient(135deg, #00cccc, #007777); }
-.rank-3 .tier-label  { background: linear-gradient(135deg, #0055ff, #0022aa); }
-.rank-2 .tier-label  { background: linear-gradient(135deg, #5500ff, #2200aa); }
-.rank-1 .tier-label  { background: linear-gradient(135deg, #444444, #222222); }
+.rank-10 .tier-label { background: linear-gradient(135deg, #d9756a, #c85a52); }
+.rank-9 .tier-label  { background: linear-gradient(135deg, #dc8d6f, #d07960); }
+.rank-8 .tier-label  { background: linear-gradient(135deg, #dfa876, #d99462); }
+.rank-7 .tier-label  { background: linear-gradient(135deg, #dfc084, #d9ac70); }
+.rank-6 .tier-label  { background: linear-gradient(135deg, #d9c87c, #d3b468); }
+.rank-5 .tier-label  { background: linear-gradient(135deg, #cad085, #bec470); }
+.rank-4 .tier-label  { background: linear-gradient(135deg, #b8d896, #acd282); }
+.rank-3 .tier-label  { background: linear-gradient(135deg, #a5dea8, #99d295); }
+.rank-2 .tier-label  { background: linear-gradient(135deg, #98d9b8, #8ccda8); }
+.rank-1 .tier-label  { background: linear-gradient(135deg, #a8b8a8, #9cac9c); }
 
 .tier-content {
   display: grid;
@@ -262,123 +285,138 @@ body {
   flex-grow: 1;
 }
 
+.deck-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
 .deck-card {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid transparent;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  border: 2px solid rgba(93, 74, 56, 0.15);
+  border-radius: 10px;
+  overflow: visible;
   cursor: pointer;
-  background-color: #1a1a1f;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .deck-card:hover {
   transform: scale(1.08);
   z-index: 5;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
-.deck-card img {
+.deck-card > img {
+  flex: 1;
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: cover;
+  border-radius: 8px 8px 0 0;
 }
 
 .deck-card.is-dimmed {
-  opacity: 0.35;
-  filter: grayscale(0.7) brightness(0.7);
+  opacity: 0.3;
+  filter: grayscale(0.8) brightness(0.85);
 }
 
 .deck-card.is-active {
   border-width: 3px;
-  box-shadow: 0 0 14px rgba(255,255,255,0.25);
+  box-shadow: 0 4px 12px rgba(193, 122, 106, 0.3);
 }
 
 .deck-name {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0,0,0,0.85);
-  font-size: 0.7rem;
-  text-align: center;
   padding: 3px 0;
-  opacity: 0;
-  transition: opacity 0.2s;
+  background: rgba(93, 74, 56, 0.92);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: normal;
+  text-align: center;
+  text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-}
-.deck-card:hover .deck-name,
-.deck-card.is-active .deck-name {
+  position: static;
   opacity: 1;
+  transition: opacity 0.2s;
 }
 
 .deck-category-chip {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 4;
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 999px;
-  padding: 4px 8px;
+  width: 100%;
+  padding: 4px 6px;
+  margin: 0;
+  background: rgba(212, 165, 116, 0.95);
+  border: 1px solid rgba(93, 74, 56, 0.3);
+  border-radius: 6px;
+  color: #fff;
   font-size: 0.62rem;
   font-weight: 700;
-  background: rgba(15, 23, 42, 0.92);
-  color: #fff;
+  text-align: center;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  position: static;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .deck-category-chip:hover {
-  background: #1d4ed8;
+  background: rgba(193, 122, 106, 0.95);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.ua-red { border-color: #ff4757; box-shadow: 0 0 6px rgba(255, 71, 87, 0.3); }
-.ua-green { border-color: #2ed573; box-shadow: 0 0 6px rgba(46, 213, 115, 0.3); }
-.ua-yellow { border-color: #ffa502; box-shadow: 0 0 6px rgba(255, 165, 2, 0.3); }
-.ua-blue { border-color: #1e90ff; box-shadow: 0 0 6px rgba(30, 144, 255, 0.3); }
-.ua-purple { border-color: #9b59b6; box-shadow: 0 0 6px rgba(155, 89, 182, 0.3); }
-.ua-red:hover { box-shadow: 0 0 12px rgba(255, 71, 87, 0.8); }
-.ua-green:hover { box-shadow: 0 0 12px rgba(46, 213, 115, 0.8); }
-.ua-yellow:hover { box-shadow: 0 0 12px rgba(255, 165, 2, 0.8); }
-.ua-blue:hover { box-shadow: 0 0 12px rgba(30, 144, 255, 0.8); }
-.ua-purple:hover { box-shadow: 0 0 12px rgba(155, 89, 182, 0.8); }
+/* 色彩變體 */
+.ua-red { border-color: #e85d52; box-shadow: 0 0 8px rgba(232, 93, 82, 0.4); }
+.ua-green { border-color: #5fc96e; box-shadow: 0 0 8px rgba(95, 201, 110, 0.4); }
+.ua-yellow { border-color: #f0b850; box-shadow: 0 0 8px rgba(240, 184, 80, 0.4); }
+.ua-blue { border-color: #6b8fd9; box-shadow: 0 0 8px rgba(107, 143, 217, 0.4); }
+.ua-purple { border-color: #c084d9; box-shadow: 0 0 8px rgba(192, 132, 217, 0.4); }
+
+.ua-red:hover { box-shadow: 0 0 16px rgba(232, 93, 82, 0.7); }
+.ua-green:hover { box-shadow: 0 0 16px rgba(95, 201, 110, 0.7); }
+.ua-yellow:hover { box-shadow: 0 0 16px rgba(240, 184, 80, 0.7); }
+.ua-blue:hover { box-shadow: 0 0 16px rgba(107, 143, 217, 0.7); }
+.ua-purple:hover { box-shadow: 0 0 16px rgba(192, 132, 217, 0.7); }
 
 .deck-tag {
   position: absolute;
   top: 4px;
   left: 4px;
   z-index: 3;
-  background: linear-gradient(135deg, #ff0055, #ff5500);
-  color: #ffffff;
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #d9756a, #dc8d6f);
+  border-radius: 4px;
+  color: #fff;
   font-size: 0.6rem;
   font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  pointer-events: none;
+  text-align: center;
   white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 @media (max-width: 600px) {
   .tier-row {
     flex-direction: column;
   }
+  
   .tier-label {
     width: 100%;
     height: 35px;
     min-height: 35px;
     font-size: 1.1rem;
     border-right: none;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   }
+  
   .tier-content {
     grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
-    padding: 10px;
     gap: 6px;
+    padding: 10px;
   }
 }
 </style>
