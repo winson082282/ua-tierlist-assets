@@ -1,21 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Union Arena 牌組天梯表</title>
 </head>
+<body>
 
-<div style="margin-bottom: 15px; text-align: center;">
-    <select id="card-filter" multiple="multiple" style="width: 400px;"></select>
-    <select id="color-filter" multiple="multiple" style="width: 400px;">
-        <option value="黃">黃🟡</option>
-        <option value="紫">紫🟣</option>
-        <option value="藍">藍🔵</option>
-        <option value="綠">綠🟢</option>
-        <option value="紅">紅🔴</option>
-    </select>
-</div>
+  <div class="tier-list-container">
+    <div class="tier-list-header">
+      <h1>🃏 Union Arena 牌組天梯表</h1>
+      <p id="update-time">更新時間：載入中...</p>
+    </div>
 
-<div id="card-loading" style="text-align:center; padding: 20px;">⏳ 資料載入中...</div>
-<div id="card-display"></div>
+    <div class="filter-section">
+      <div style="margin-bottom: 15px;">
+        <label for="card-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">分類篩選：</label>
+        <select id="card-filter" multiple="multiple" style="width: 100%; max-width: 500px;"></select>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label for="color-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">顏色篩選：</label>
+        <select id="color-filter" multiple="multiple" style="width: 100%; max-width: 500px;">
+          <option value="黃">黃🟡</option>
+          <option value="紫">紫🟣</option>
+          <option value="藍">藍🔵</option>
+          <option value="綠">綠🟢</option>
+          <option value="紅">紅🔴</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="card-loading" style="text-align:center; padding: 20px;">⏳ 資料載入中...</div>
+    <div id="tier-rows-container" class="tier-rows"></div>
+  </div>
 
 <!--引入 jQuery 與 Select2 的 JS-->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -27,11 +44,23 @@
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=0&single=true&output=csv';
     // 選項分頁
     const FILTER_OPTIONS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=1050221666&single=true&output=csv';
+    
+    // 顏色映射
+    const colorMap = {
+        '紅': 'ua-red',
+        '紫': 'ua-purple',
+        '藍': 'ua-blue',
+        '綠': 'ua-green',
+        '黃': 'ua-yellow'
+    };
+    
+    let allCards = []; // 儲存所有牌組資料
+    let selectedCategory = ''; // 當前選中的 category 按鈕
 
     $(document).ready(function () {
-        const colorMap = { '黃': '#FFD700', '紫': '#9B59B6', '藍': '#3498DB', '綠': '#2ECC71', '紅': '#E74C3C' };
+        const colorDisplayMap = { '黃': '#FFD700', '紫': '#9B59B6', '藍': '#3498DB', '綠': '#2ECC71', '紅': '#E74C3C' };
         const formatColor = option => option.id
-            ? $('<span>').css('color', colorMap[option.id]).text(option.text)
+            ? $('<span>').css('color', colorDisplayMap[option.id]).text(option.text)
             : option.text;
 
         $('#card-filter').select2({
@@ -53,8 +82,6 @@
         ])
         .then(function () {
             // 統一的篩選觸發函式：分類篩選與顏色篩選共用
-            // 每次觸發都會同時讀取兩個下拉選單目前的值，
-            // 這樣不管使用者先選哪一個、或兩個都選，篩選結果都會正確取交集
             function triggerFilter() {
                 const selectedCategories = $('#card-filter').val();
                 const selectedColors = $('#color-filter').val();
@@ -117,8 +144,8 @@
         if (!response.ok) throw new Error('HTTP ' + response.status);
 
         const csvText = await response.text();
-        const cards = parseDeckCSV(csvText);  // ← 更新呼叫名稱
-        renderCards(cards);
+        allCards = parseDeckCSV(csvText);
+        renderCards(allCards);
 
         document.getElementById('card-loading').style.display = 'none';
     }
@@ -173,121 +200,367 @@
         return fields;
     }
 
-    // --- 動態產生卡片 HTML ---
+    // --- 動態產生天梯表 HTML ---
     function renderCards(cards) {
         const scores = [...new Set(cards.map(c => c.score))].sort((a, b) => b - a);
-        const container = document.getElementById('card-display');
+        const container = document.getElementById('tier-rows-container');
         const defaultImg = 'https://placehold.co/100x100';
         let html = '';
 
         scores.forEach(score => {
-            const pad = String(score).padStart(2, '0');
-            html += `<h2 class="score-${pad}">${score}分</h2>`;
-            html += `<div class="card-grid-container">`;
+            html += `<div class="tier-row rank-${score}">`;
+            html += `  <div class="tier-label">${score}分</div>`;
+            html += `  <div class="tier-content">`;
 
             cards.filter(c => c.score === score).forEach(card => {
+                const colorClass = colorMap[card.color] || '';
+                const isActive = !selectedCategory || card.category === selectedCategory;
+                
                 const img = `<img
                     alt="${card.cardName || card.category}"
                     data-category="${card.category}"
                     data-color="${card.color}"
                     data-series="${card.series}"
-                    border="0" width="100" src="${card.src}"
+                    border="0" src="${card.src}"
                     onerror="this.onerror=null; this.src='${defaultImg}';" />`;
+                
                 const inner = card.href
                     ? `<a href="${card.href}" target="_blank">${img}</a>`
                     : img;
-                html += `<div class="card-grid-item">${inner}</div>`;
+                
+                const activeClass = isActive ? 'is-active' : 'is-dimmed';
+                html += `<div class="deck-card-wrapper">`;
+                html += `  <div class="deck-card ${colorClass} ${activeClass}">`;
+                html += `    ${inner}`;
+                html += `  </div>`;
+                
+                if (card.category) {
+                    html += `  <button type="button" class="deck-category-chip" onclick="toggleCategoryFilter('${card.category}')">${card.category}</button>`;
+                }
+                
+                html += `</div>`;
             });
 
+            html += `  </div>`;
             html += `</div>`;
         });
 
         container.innerHTML = html;
     }
 
-    // --- 篩選邏輯 ---
+    // --- 篩選邏輯（支援 Select2 過濾 + Category 按鈕過濾） ---
     function filterCards(selectedCategories, selectedColors) {
         const hasCategory = selectedCategories && selectedCategories.length > 0;
         const hasColor    = selectedColors    && selectedColors.length    > 0;
 
-        if (!hasCategory && !hasColor) {
-            $('.card-grid-item').show();
-            $('h2[class^="score-"]').show();
-            return;
-        }
+        // 遍歷所有卡片 wrapper，先重置 display
+        document.querySelectorAll('.deck-card-wrapper').forEach(wrapper => {
+            const cardEl = wrapper.querySelector('.deck-card');
+            const btnEl = wrapper.querySelector('.deck-category-chip');
+            const img = cardEl.querySelector('img');
+            if (!img) return;
 
-        $('.card-grid-item').hide();
+            const category = img.dataset.category || '';
+            const color    = img.dataset.color || '';
 
-        $('.card-grid-item img').each(function () {
-            const $img = $(this);
-            const category = $img.data('category') || '';
-            const color    = $img.data('color') || '';
-
+            // Select2 篩選條件
             const categoryMatch = !hasCategory || selectedCategories.includes(category);
             const colorMatch    = !hasColor    || selectedColors.includes(color);
+            const select2Pass   = categoryMatch && colorMatch;
 
-            if (categoryMatch && colorMatch) {
-                $img.closest('.card-grid-item').show();
+            // Category 按鈕篩選條件
+            const buttonPass = !selectedCategory || category === selectedCategory;
+
+            // 根據 Select2 過濾條件決定 wrapper 是否顯示
+            if (!select2Pass) {
+                // Select2 過濾掉了，隱藏整個 wrapper（卡片 + 按鈕）
+                wrapper.style.display = 'none';
+                cardEl.classList.remove('is-active', 'is-dimmed');
+                if (btnEl) btnEl.classList.remove('is-dimmed');
+            } else {
+                // Select2 通過，顯示 wrapper
+                wrapper.style.display = '';
+                
+                // 再根據按鈕過濾應用樣式
+                if (buttonPass) {
+                    cardEl.classList.remove('is-dimmed');
+                    cardEl.classList.add('is-active');
+                    if (btnEl) btnEl.classList.remove('is-dimmed');
+                } else {
+                    cardEl.classList.remove('is-active');
+                    cardEl.classList.add('is-dimmed');
+                    if (btnEl) btnEl.classList.add('is-dimmed');
+                }
             }
         });
 
-        $('h2[class^="score-"]').each(function () {
-            const hasVisible = $(this).next('.card-grid-container').find('.card-grid-item:visible').length > 0;
-            $(this).toggle(hasVisible);
+        // 隱藏空的級距行
+        document.querySelectorAll('.tier-row').forEach(row => {
+            const visibleWrappers = row.querySelectorAll('.deck-card-wrapper:not([style*="display: none"])').length;
+            row.style.display = visibleWrappers > 0 ? '' : 'none';
         });
+    }
+
+    // --- Category 按鈕點擊處理 ---
+    function toggleCategoryFilter(category) {
+        selectedCategory = selectedCategory === category ? '' : category;
+        const selectedCategories = $('#card-filter').val();
+        const selectedColors = $('#color-filter').val();
+        filterCards(selectedCategories, selectedColors);
     }
 </script>
 
 <style>
-    .card-grid-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-        justify-content: left;
-        width: 100%;
-        margin-bottom: 25px;
-        box-sizing: border-box;
-    }
+/* ★ 淡雅奶油主題 - 基礎設定 */
+body {
+  background: linear-gradient(135deg, #faf6f0 0%, #fdfbf7 100%);
+  font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  color: #6b5844;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
 
-    .card-grid-item {
-        width: 100px;
-        padding: 0px;
-        border: 0px;
-        background-color: transparent;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-sizing: border-box;
-    }
+.tier-list-container {
+  width: 100%;
+  max-width: 1400px;
+}
 
-    .card-grid-item img {
-        max-width: 100%;
-        height: auto;
-        display: block;
-    }
+/* 標題區 */
+.tier-list-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
 
-    /* ★ 共用樣式收斂 */
-    h2[class^="score-"] {
-        color: #000000;
-        font-weight: bold;
-        padding: 10px 15px;
-        margin-top: 10px;
-        margin-bottom: 10px;
-        border-radius: 4px;
-        box-sizing: border-box;
-        text-align: center;
-    }
+.tier-list-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  background: linear-gradient(45deg, #c17a6a, #d4a574);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 5px;
+}
 
-    /* ★ 各分數只保留背景色 */
-    .score-10 { background-color: #ff6b6b; }
-    .score-09 { background-color: #f39c11; }
-    .score-08 { background-color: #f1c40f; }
-    .score-07 { background-color: #9fe2bf; }
-    .score-06 { background-color: #80e1ab; }
-    .score-05 { background-color: #4ecdc4; }
-    .score-04 { background-color: #fed700; }
-    .score-03 { background-color: #fea500; }
-    .score-02 { background-color: #fd79a8; }
-    .score-01 { background-color: #e84c3d; }
-    .score-00 { background-color: #c1392b; }
+.tier-list-header p {
+  color: #7d6b5c;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* 篩選區域 */
+.filter-section {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(93, 74, 56, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.filter-section label {
+  color: #6b5844;
+  font-size: 0.95rem;
+}
+
+/* Select2 自定義樣式 */
+.select2-container--default .select2-selection--multiple {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(93, 74, 56, 0.2) !important;
+  border-radius: 6px;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+  border-color: #d4a574 !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+  background: linear-gradient(135deg, #d4a574 0%, #c8956e 100%);
+  border-color: #c17a6a;
+  color: #fff;
+}
+
+/* 天梯表整體外框 */
+.tier-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* 單一級距行 */
+.tier-row {
+  display: flex;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: opacity 0.3s ease;
+}
+
+/* 左側分數標籤區 */
+.tier-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  min-width: 90px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.rank-10 .tier-label { background: linear-gradient(135deg, #d9756a, #c85a52); }
+.rank-9 .tier-label  { background: linear-gradient(135deg, #dc8d6f, #d07960); }
+.rank-8 .tier-label  { background: linear-gradient(135deg, #dfa876, #d99462); }
+.rank-7 .tier-label  { background: linear-gradient(135deg, #dfc084, #d9ac70); }
+.rank-6 .tier-label  { background: linear-gradient(135deg, #d9c87c, #d3b468); }
+.rank-5 .tier-label  { background: linear-gradient(135deg, #cad085, #bec470); }
+.rank-4 .tier-label  { background: linear-gradient(135deg, #b8d896, #acd282); }
+.rank-3 .tier-label  { background: linear-gradient(135deg, #a5dea8, #99d295); }
+.rank-2 .tier-label  { background: linear-gradient(135deg, #98d9b8, #8ccda8); }
+.rank-1 .tier-label  { background: linear-gradient(135deg, #a8b8a8, #9cac9c); }
+
+.tier-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 10px;
+  padding: 15px;
+  flex-grow: 1;
+}
+
+.deck-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.deck-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background-color: #fff;
+  border: 2px solid rgba(93, 74, 56, 0.15);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.deck-card > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.deck-card > a {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.deck-card > a > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.deck-card.is-dimmed {
+  opacity: 0.3;
+  filter: grayscale(0.8) brightness(0.85);
+}
+
+.deck-card.is-active {
+  border-width: 3px;
+  box-shadow: 0 4px 12px rgba(193, 122, 106, 0.3);
+}
+
+.deck-name {
+  padding: 3px 0;
+  background: rgba(93, 74, 56, 0.92);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: normal;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  position: static;
+  opacity: 1;
+  transition: opacity 0.2s;
+  display: none;
+}
+
+.deck-category-chip {
+  width: 100%;
+  max-width: 70px;
+  padding: 4px 8px;
+  background: rgba(212, 165, 116, 0.95);
+  border: 1px solid rgba(93, 74, 56, 0.3);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: background 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+}
+
+.deck-category-chip:hover {
+  background: rgba(193, 122, 106, 0.95);
+}
+
+.deck-category-chip.is-dimmed {
+  opacity: 0.3;
+  filter: grayscale(0.8) brightness(0.85);
+}
+
+/* 色彩變體 */
+.ua-red { border-color: #e85d52; box-shadow: 0 0 8px rgba(232, 93, 82, 0.4); }
+.ua-green { border-color: #5fc96e; box-shadow: 0 0 8px rgba(95, 201, 110, 0.4); }
+.ua-yellow { border-color: #f0b850; box-shadow: 0 0 8px rgba(240, 184, 80, 0.4); }
+.ua-blue { border-color: #6b8fd9; box-shadow: 0 0 8px rgba(107, 143, 217, 0.4); }
+.ua-purple { border-color: #c084d9; box-shadow: 0 0 8px rgba(192, 132, 217, 0.4); }
+
+.ua-red:hover { box-shadow: 0 0 16px rgba(232, 93, 82, 0.7); }
+.ua-green:hover { box-shadow: 0 0 16px rgba(95, 201, 110, 0.7); }
+.ua-yellow:hover { box-shadow: 0 0 16px rgba(240, 184, 80, 0.7); }
+.ua-blue:hover { box-shadow: 0 0 16px rgba(107, 143, 217, 0.7); }
+.ua-purple:hover { box-shadow: 0 0 16px rgba(192, 132, 217, 0.7); }
+
+@media (max-width: 600px) {
+  .tier-row {
+    flex-direction: column;
+  }
+  
+  .tier-label {
+    width: 100%;
+    height: 35px;
+    min-height: 35px;
+    font-size: 1.1rem;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .tier-content {
+    grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+    gap: 6px;
+    padding: 10px;
+  }
+}
 </style>
+
+</body>
+</html>
