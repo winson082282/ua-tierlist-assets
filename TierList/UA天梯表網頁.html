@@ -8,15 +8,10 @@
 <body>
 
   <div class="tier-list-container">
-    <div class="tier-list-header">
-      <h1>🃏 Union Arena 牌組天梯表</h1>
-      <p id="update-time">更新時間：載入中...</p>
-    </div>
-
     <div class="filter-section">
       <div style="margin-bottom: 15px;">
-        <label for="card-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">分類篩選：</label>
-        <select id="card-filter" multiple="multiple" style="width: 100%; max-width: 500px;"></select>
+        <label for="series-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">系列篩選：</label>
+        <select id="series-filter" multiple="multiple" style="width: 100%; max-width: 500px;"></select>
       </div>
       <div style="margin-bottom: 15px;">
         <label for="color-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">顏色篩選：</label>
@@ -55,7 +50,7 @@
     };
     
     let allCards = []; // 儲存所有牌組資料
-    let selectedCategory = ''; // 當前選中的 category 按鈕
+    let activeTag = ''; // 當前選中的 標籤 按鈕
 
     $(document).ready(function () {
         const colorDisplayMap = { '黃': '#FFD700', '紫': '#9B59B6', '藍': '#3498DB', '綠': '#2ECC71', '紅': '#E74C3C' };
@@ -63,8 +58,8 @@
             ? $('<span>').css('color', colorDisplayMap[option.id]).text(option.text)
             : option.text;
 
-        $('#card-filter').select2({
-            placeholder: "請選擇分類...",
+        $('#series-filter').select2({
+            placeholder: "請選擇系列...",
             allowClear: true
         });
 
@@ -77,18 +72,18 @@
 
         // 同時載入選項與卡片資料
         Promise.all([
-            loadFilterOptions(),
+            loadSeriesFilterOptions(),
             loadCardsFromSheet()
         ])
         .then(function () {
             // 統一的篩選觸發函式：分類篩選與顏色篩選共用
             function triggerFilter() {
-                const selectedCategories = $('#card-filter').val();
+                const selectedSeries = $('#series-filter').val();
                 const selectedColors = $('#color-filter').val();
-                filterCards(selectedCategories, selectedColors);
+                filterCards(selectedSeries, selectedColors);
             }
 
-            $('#card-filter').on('change', triggerFilter);
+            $('#series-filter').on('change', triggerFilter);
             $('#color-filter').on('change', triggerFilter);
         })
         .catch(function (err) {
@@ -98,13 +93,13 @@
     });
 
     // ★ 從選項分頁動態載入 <option>
-    async function loadFilterOptions() {
+    async function loadSeriesFilterOptions() {
         const response = await fetch(FILTER_OPTIONS_URL);
         if (!response.ok) throw new Error('HTTP ' + response.status);
 
         const csvText = await response.text();
         const lines = csvText.trim().split('\n');
-        const select = document.getElementById('card-filter');
+        const select = document.getElementById('series-filter');
         const groupMap = {};
 
         for (let i = 1; i < lines.length; i++) {
@@ -135,7 +130,7 @@
             }
         }
 
-        $('#card-filter').trigger('change.select2');
+        $('#series-filter').trigger('change.select2');
     }
 
     // --- 從 Google Sheet 讀取並渲染 ---
@@ -161,7 +156,7 @@
 
             const imgurl = 'https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets/TierList_DeckIcon/';
             const score = parseInt(fields[0]);
-            const category = fields[1] ? fields[1].trim() : '';
+            const tag      = fields[1] ? fields[1].trim() : '';
             const series   = fields[2] ? fields[2].trim() : '';
             const color    = fields[3] ? fields[3].trim() : '';
             const iconName = fields[4] ? fields[4].trim() : '';
@@ -170,7 +165,7 @@
             const src      = iconName ? imgurl + iconName + '.jpg' : defaultImg;
 
             if (!isNaN(score) && src) {
-                cards.push({ score, category, color, series, cardName, src, href: href || null });
+                cards.push({ score, tag, color, series, cardName, src, href: href || null });
             }
         }
         return cards;
@@ -214,11 +209,11 @@
 
             cards.filter(c => c.score === score).forEach(card => {
                 const colorClass = colorMap[card.color] || '';
-                const isActive = !selectedCategory || card.category === selectedCategory;
+                const isActive = !activeTag || card.tag === activeTag;
                 
                 const img = `<img
-                    alt="${card.cardName || card.category}"
-                    data-category="${card.category}"
+                    alt="${card.cardName || card.tag}"
+                    data-tag="${card.tag}"
                     data-color="${card.color}"
                     data-series="${card.series}"
                     border="0" src="${card.src}"
@@ -234,8 +229,8 @@
                 html += `    ${inner}`;
                 html += `  </div>`;
                 
-                if (card.category) {
-                    html += `  <button type="button" class="deck-category-chip" onclick="toggleCategoryFilter('${card.category}')">${card.category}</button>`;
+                if (card.tag) {
+                    html += `  <button type="button" class="tag-chip" onclick="toggleTag('${card.tag}')">${card.tag}</button>`;
                 }
                 
                 html += `</div>`;
@@ -248,28 +243,29 @@
         container.innerHTML = html;
     }
 
-    // --- 篩選邏輯（支援 Select2 過濾 + Category 按鈕過濾） ---
-    function filterCards(selectedCategories, selectedColors) {
-        const hasCategory = selectedCategories && selectedCategories.length > 0;
-        const hasColor    = selectedColors    && selectedColors.length    > 0;
+    // --- 篩選邏輯（支援 Select2 系列篩選 + 標籤按鈕過濾） ---
+    function filterCards(selectedSeries, selectedColors) {
+        const hasSeries = selectedSeries && selectedSeries.length > 0;
+        const hasColor  = selectedColors && selectedColors.length > 0;
 
         // 遍歷所有卡片 wrapper，先重置 display
         document.querySelectorAll('.deck-card-wrapper').forEach(wrapper => {
             const cardEl = wrapper.querySelector('.deck-card');
-            const btnEl = wrapper.querySelector('.deck-category-chip');
+            const btnEl = wrapper.querySelector('.tag-chip');
             const img = cardEl.querySelector('img');
             if (!img) return;
 
-            const category = img.dataset.category || '';
-            const color    = img.dataset.color || '';
+            const tag = img.dataset.tag || '';
+            const color = img.dataset.color || '';
+            const series = img.dataset.series || '';
 
             // Select2 篩選條件
-            const categoryMatch = !hasCategory || selectedCategories.includes(category);
-            const colorMatch    = !hasColor    || selectedColors.includes(color);
-            const select2Pass   = categoryMatch && colorMatch;
+            const seriesMatch = !hasSeries || selectedSeries.includes(series);
+            const colorMatch  = !hasColor  || selectedColors.includes(color);
+            const select2Pass = seriesMatch && colorMatch;
 
-            // Category 按鈕篩選條件
-            const buttonPass = !selectedCategory || category === selectedCategory;
+            // Tag 按鈕篩選條件
+            const buttonPass = !activeTag || tag === activeTag;
 
             // 根據 Select2 過濾條件決定 wrapper 是否顯示
             if (!select2Pass) {
@@ -301,12 +297,12 @@
         });
     }
 
-    // --- Category 按鈕點擊處理 ---
-    function toggleCategoryFilter(category) {
-        selectedCategory = selectedCategory === category ? '' : category;
-        const selectedCategories = $('#card-filter').val();
+    // --- Tag 按鈕點擊處理 ---
+    function toggleTag(tag) {
+        activeTag = activeTag === tag ? '' : tag;
+        const selectedSeries = $('#series-filter').val();
         const selectedColors = $('#color-filter').val();
-        filterCards(selectedCategories, selectedColors);
+        filterCards(selectedSeries, selectedColors);
     }
 </script>
 
@@ -501,28 +497,28 @@ body {
   display: none;
 }
 
-.deck-category-chip {
-  width: 100%;
-  max-width: 70px;
-  padding: 4px 8px;
-  background: rgba(212, 165, 116, 0.95);
-  border: 1px solid rgba(93, 74, 56, 0.3);
-  border-radius: 6px;
-  color: #fff;
-  font-size: 0.62rem;
-  font-weight: 700;
-  text-align: center;
-  cursor: pointer;
-  box-sizing: border-box;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-  transition: background 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
-}
+.tag-chip {
+      width: 100%;
+      max-width: 70px;
+      padding: 4px 8px;
+      background: rgba(212, 165, 116, 0.95);
+      border: 1px solid rgba(93, 74, 56, 0.3);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      box-sizing: border-box;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      transition: background 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+    }
 
-.deck-category-chip:hover {
-  background: rgba(193, 122, 106, 0.95);
-}
+    .tag-chip:hover {
+      background: rgba(193, 122, 106, 0.95);
+    }
 
-.deck-category-chip.is-dimmed {
+    .tag-chip.is-dimmed {
   opacity: 0.3;
   filter: grayscale(0.8) brightness(0.85);
 }
