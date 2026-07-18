@@ -10,14 +10,8 @@
   <div class="tier-list-container">
     <div class="filter-section">
       <div style="margin-bottom: 15px;">
-        <label for="color-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">顏色篩選：</label>
-        <select id="color-filter" multiple="multiple" style="width: 100%; max-width: 500px;">
-          <option value="黃">黃🟡</option>
-          <option value="紫">紫🟣</option>
-          <option value="藍">藍🔵</option>
-          <option value="綠">綠🟢</option>
-          <option value="紅">紅🔴</option>
-        </select>
+        <label for="color-checkboxes" style="display: block; margin-bottom: 8px; font-weight: 600;">顏色篩選：</label>
+        <div id="color-checkboxes" style="width:100%; max-width:500px; display:flex; gap:8px; flex-wrap:wrap;"></div>
       </div>
       <div style="margin-bottom: 15px;">
         <label for="series-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">系列篩選：(可輸入關鍵字搜尋)</label>
@@ -53,22 +47,19 @@
     let activeTag = ''; // 當前選中的 標籤 按鈕
 
     $(document).ready(function () {
-        const colorDisplayMap = { '黃': '#FFD700', '紫': '#9B59B6', '藍': '#3498DB', '綠': '#2ECC71', '紅': '#E74C3C' };
-        const formatColor = option => option.id
-            ? $('<span>').css('color', colorDisplayMap[option.id]).text(option.text)
-            : option.text;
-
         $('#series-filter').select2({
             placeholder: "請選擇系列...",
             allowClear: true
         });
+        const colorDisplayMap = { '黃': '#FFD700', '紫': '#9B59B6', '藍': '#3498DB', '綠': '#2ECC71', '紅': '#E74C3C' };
 
-        $('#color-filter').select2({
-            placeholder: "請選擇顏色...",
-            allowClear: true,
-            templateResult: formatColor,
-            templateSelection: formatColor
+        $('#series-filter').select2({
+          placeholder: "請選擇系列...",
+          allowClear: true
         });
+
+        // 以 checkbox 呈現顏色篩選（保留 series 的 Select2）
+        loadColorCheckboxes();
 
         // 同時載入選項與卡片資料
         Promise.all([
@@ -78,13 +69,15 @@
         .then(function () {
             // 統一的篩選觸發函式：分類篩選與顏色篩選共用
             function triggerFilter() {
-                const selectedSeries = $('#series-filter').val();
-                const selectedColors = $('#color-filter').val();
-                filterCards(selectedSeries, selectedColors);
+              const selectedSeries = $('#series-filter').val();
+              const selectedColors = Array.from(document.querySelectorAll('#color-checkboxes input[type="checkbox"]:checked')).map(i => i.value);
+              filterCards(selectedSeries, selectedColors);
             }
 
             $('#series-filter').on('change', triggerFilter);
-            $('#color-filter').on('change', triggerFilter);
+            // 監聽 checkbox 容器的變更（事件代理）
+            const colorContainer = document.getElementById('color-checkboxes');
+            if (colorContainer) colorContainer.addEventListener('change', triggerFilter);
         })
         .catch(function (err) {
             $('#card-loading').html('❌ 資料載入失敗，請重新整理頁面。');
@@ -132,6 +125,52 @@
 
         $('#series-filter').trigger('change.select2');
     }
+
+      // --- 生成顏色 checkbox 清單 ---
+      function loadColorCheckboxes() {
+        const container = document.getElementById('color-checkboxes');
+        if (!container) return;
+        const colors = [
+          {v: '黃', emoji: '🟡', c: '#FFD700'},
+          {v: '紫', emoji: '🟣', c: '#9B59B6'},
+          {v: '藍', emoji: '🔵', c: '#3498DB'},
+          {v: '綠', emoji: '🟢', c: '#2ECC71'},
+          {v: '紅', emoji: '🔴', c: '#E74C3C'}
+        ];
+
+        colors.forEach(col => {
+          const id = 'color_cb_' + col.v;
+          const label = document.createElement('label');
+          label.style.display = 'inline-flex';
+          label.style.alignItems = 'center';
+          label.style.gap = '6px';
+          label.style.padding = '4px 6px';
+          label.style.borderRadius = '6px';
+          label.style.cursor = 'pointer';
+
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.id = id;
+          input.value = col.v;
+
+          const dot = document.createElement('span');
+          dot.style.display = 'inline-block';
+          dot.style.width = '12px';
+          dot.style.height = '12px';
+          dot.style.borderRadius = '50%';
+          dot.style.background = col.c;
+          dot.style.boxShadow = '0 0 6px rgba(0,0,0,0.08)';
+
+          const text = document.createElement('span');
+          text.textContent = col.v + col.emoji;
+
+          label.appendChild(input);
+          label.appendChild(dot);
+          label.appendChild(text);
+
+          container.appendChild(label);
+        });
+      }
 
     // --- 從 Google Sheet 讀取並渲染 ---
     async function loadCardsFromSheet() {
@@ -299,7 +338,7 @@
     function toggleTag(tag) {
         activeTag = activeTag === tag ? '' : tag;
         const selectedSeries = $('#series-filter').val();
-        const selectedColors = $('#color-filter').val();
+      const selectedColors = Array.from(document.querySelectorAll('#color-checkboxes input[type="checkbox"]:checked')).map(i => i.value);
         filterCards(selectedSeries, selectedColors);
     }
 </script>
