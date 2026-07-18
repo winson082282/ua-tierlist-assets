@@ -10,10 +10,6 @@
   <div class="tier-list-container">
     <div class="filter-section">
       <div style="margin-bottom: 15px;">
-        <label for="series-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">系列篩選：</label>
-        <select id="series-filter" multiple="multiple" style="width: 100%; max-width: 500px;"></select>
-      </div>
-      <div style="margin-bottom: 15px;">
         <label for="color-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">顏色篩選：</label>
         <select id="color-filter" multiple="multiple" style="width: 100%; max-width: 500px;">
           <option value="黃">黃🟡</option>
@@ -22,6 +18,10 @@
           <option value="綠">綠🟢</option>
           <option value="紅">紅🔴</option>
         </select>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label for="series-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">系列篩選：(可輸入關鍵字搜尋)</label>
+        <select id="series-filter" multiple="multiple" style="width: 100%; max-width: 500px;"></select>
       </div>
     </div>
 
@@ -36,9 +36,9 @@
 
 <script>
     // Google Sheet CSV 網址
-    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=0&single=true&output=csv';
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=218268368&single=true&output=csv';
     // 選項分頁
-    const FILTER_OPTIONS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=1050221666&single=true&output=csv';
+    const FILTER_OPTIONS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=2069717497&single=true&output=csv';
     
     // 顏色映射
     const colorMap = {
@@ -154,18 +154,17 @@
             const fields = parseCSVLine(lines[i].trim());  // ← 更新呼叫名稱
             if (!fields || fields.length < 3) continue;
 
-            const imgurl = 'https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets/TierList_DeckIcon/';
+            const imgurl = 'https://res.cloudinary.com/c9t2zuha/image/upload/';
             const score = parseInt(fields[0]);
-            const tag      = fields[1] ? fields[1].trim() : '';
-            const series   = fields[2] ? fields[2].trim() : '';
+            const series   = fields[1] ? fields[1].trim() : '';
+            const tag      = fields[2] ? fields[2].trim() : '';
             const color    = fields[3] ? fields[3].trim() : '';
             const iconName = fields[4] ? fields[4].trim() : '';
             const href     = fields[5] ? fields[5].trim() : null;
-            const cardName = fields[6] ? fields[6].trim() : '';
-            const src      = iconName ? imgurl + iconName + '.jpg' : defaultImg;
+            const src      = iconName ? imgurl + iconName : defaultImg;
 
             if (!isNaN(score) && src) {
-                cards.push({ score, tag, color, series, cardName, src, href: href || null });
+                cards.push({ score, tag, color, series, src, href: href || null });
             }
         }
         return cards;
@@ -212,7 +211,6 @@
                 const isActive = !activeTag || card.tag === activeTag;
                 
                 const img = `<img
-                    alt="${card.cardName || card.tag}"
                     data-tag="${card.tag}"
                     data-color="${card.color}"
                     data-series="${card.series}"
@@ -424,6 +422,7 @@ body {
 .rank-3 .tier-label  { background: linear-gradient(135deg, #a5dea8, #99d295); }
 .rank-2 .tier-label  { background: linear-gradient(135deg, #98d9b8, #8ccda8); }
 .rank-1 .tier-label  { background: linear-gradient(135deg, #a8b8a8, #9cac9c); }
+.rank-0 .tier-label  { background: linear-gradient(135deg, #8f8f8f, #6f6f6f); }
 
 .tier-content {
   display: grid;
