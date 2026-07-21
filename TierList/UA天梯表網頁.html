@@ -40,6 +40,9 @@
         <label for="series-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">系列篩選：</label>
         <select id="series-filter" multiple="multiple" style="width: 100%;"></select>
       </div>
+      <div>
+        <button type="button" id="export-image-btn" class="export-btn">📸 匯出圖片</button>
+      </div>
     </div>
 
     <div id="card-loading" style="text-align:center; padding: 20px;">⏳ 資料載入中...</div>
@@ -50,6 +53,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<!--引入 html2canvas，用於將天梯表匯出成圖片-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
     // Google Sheet CSV 網址
@@ -64,6 +69,15 @@
         '藍': 'ua-blue',
         '綠': 'ua-green',
         '黃': 'ua-yellow'
+    };
+
+    // 顏色排序順序（分數段內排序用）：黃→紫→藍→綠→紅
+    const colorOrder = {
+        '黃': 0,
+        '紫': 1,
+        '藍': 2,
+        '綠': 3,
+        '紅': 4
     };
     
     // 預設圖片（全域常數）
@@ -110,6 +124,12 @@
                 updateColorAvailability(selectedSeries);
                 filterCards(selectedSeries, []);
             });
+        }
+
+        // 「匯出圖片」按鈕：將目前畫面的天梯表（含篩選結果）匯出成 PNG 圖片
+        const exportImageBtn = document.getElementById('export-image-btn');
+        if (exportImageBtn) {
+            exportImageBtn.addEventListener('click', exportTierListImage);
         }
 
         // 同時載入選項與卡片資料
@@ -205,19 +225,40 @@
             if (!fields || fields.length < 3) continue;
 
             const imgurl = 'https://res.cloudinary.com/c9t2zuha/image/upload/';
-            const score = parseInt(fields[0]);
-            const series   = fields[1] ? fields[1].trim() : '';
-            const tag      = fields[2] ? fields[2].trim() : '';
-            const color    = fields[3] ? fields[3].trim() : '';
-            const iconName = fields[4] ? fields[4].trim() : '';
-            const href     = fields[5] ? fields[5].trim() : null;
-            const src      = iconName ? imgurl + iconName : defaultImg;
+            const score       = parseInt(fields[0]);
+            const series      = fields[1] ? fields[1].trim() : '';
+            const releaseDate = fields[2] ? fields[2].trim() : '';
+            const tag         = fields[3] ? fields[3].trim() : '';
+            const color       = fields[4] ? fields[4].trim() : '';
+            const iconName    = fields[5] ? fields[5].trim() : '';
+            const href        = fields[6] ? fields[6].trim() : null;
+            const src         = iconName ? imgurl + iconName : defaultImg;
 
             if (!isNaN(score) && src) {
-                cards.push({ score, tag, color, series, src, href: href || null });
+                cards.push({ score, tag, color, series, src, href: href || null, releaseDate });
             }
         }
         return cards;
+    }
+
+    // --- 解析出售日期字串為 Date 物件（空白回傳 null） ---
+    function parseReleaseDate(str) {
+        if (!str) return null;
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    // --- 分數段內排序：1. 顏色（黃→紫→藍→綠→紅） 2. 出售日期倒序（新到舊，空白排最前） ---
+    function compareCardsForSort(a, b) {
+        const colorDiff = (colorOrder[a.color] ?? 999) - (colorOrder[b.color] ?? 999);
+        if (colorDiff !== 0) return colorDiff;
+
+        const aDate = parseReleaseDate(a.releaseDate);
+        const bDate = parseReleaseDate(b.releaseDate);
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return -1;
+        if (!bDate) return 1;
+        return bDate - aDate;
     }
 
     // --- CSV 單行欄位解析（正確處理引號） ---
@@ -255,7 +296,7 @@
             html += `  <div class="tier-label">${score}分</div>`;
             html += `  <div class="tier-content">`;
 
-            cards.filter(c => c.score === score).forEach(card => {
+            cards.filter(c => c.score === score).sort(compareCardsForSort).forEach(card => {
                 const colorClass = colorMap[card.color] || '';
                 const isActive = !activeTag || card.tag === activeTag;
                 
@@ -264,16 +305,19 @@
                     data-color="${card.color}"
                     data-series="${card.series}"
                     border="0" src="${card.src}"
+                    crossorigin="anonymous"
                     onerror="this.onerror=null; this.src='${defaultImg}';" />`;
                 
                 const inner = card.href
-                    ? `<a href="${card.href}" target="_blank">${img}</a>`
+                    ? `<a href="${card.href}" target="_blank" rel="noopener noreferrer">${img}</a>`
                     : img;
+                const linkBadge = card.href ? `<span class="link-badge">🔗</span>` : '';
                 
                 const activeClass = isActive ? 'is-active' : 'is-dimmed';
                 html += `<div class="deck-card-wrapper">`;
                 html += `  <div class="deck-card ${colorClass} ${activeClass}">`;
                 html += `    ${inner}`;
+                html += `    ${linkBadge}`;
                 html += `  </div>`;
                 
                 if (card.tag) {
@@ -350,6 +394,39 @@
         const selectedSeries = $('#series-filter').val();
       const selectedColors = Array.from(document.querySelectorAll('#color-checkboxes input[type="checkbox"]:checked')).map(i => i.value);
         filterCards(selectedSeries, selectedColors);
+    }
+
+    // --- 匯出目前畫面的天梯表為 PNG 圖片 ---
+    function exportTierListImage() {
+        const target = document.getElementById('tier-rows-container');
+        const btn = document.getElementById('export-image-btn');
+        if (!target || !btn) return;
+
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '匯出中...';
+
+        html2canvas(target, {
+            useCORS: true,
+            backgroundColor: '#faf6f0',
+            scale: 2
+        }).then(function (canvas) {
+            const link = document.createElement('a');
+            const pad = n => String(n).padStart(2, '0');
+            const now = new Date();
+            const timestamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '_' + pad(now.getHours()) + pad(now.getMinutes());
+            link.download = `UA天梯表_${timestamp}.png`;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }).catch(function (err) {
+            console.error('匯出圖片失敗：', err);
+            alert('匯出圖片失敗，請稍後再試。');
+        }).finally(function () {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        });
     }
 </script>
 
@@ -582,7 +659,7 @@ body {
   border: 2px solid rgba(93, 74, 56, 0.15);
   border-radius: 10px;
   overflow: hidden;
-  cursor: pointer;
+  cursor: default;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
@@ -597,12 +674,31 @@ body {
   width: 100%;
   height: 100%;
   display: flex;
+  cursor: pointer;
 }
 
 .deck-card > a > img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.link-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 0.65rem;
+  line-height: 1;
+  color: #fff;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .deck-card.is-dimmed {
@@ -697,6 +793,31 @@ body {
 .clear-filter-btn:hover {
   background: #c17a6a;
   color: #fff;
+}
+
+/* 匯出圖片按鈕 */
+.export-btn {
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #d4a574 0%, #c8956e 100%);
+  border: 1px solid rgba(93, 74, 56, 0.3);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: background 0.2s ease, opacity 0.2s ease, transform 0.15s ease;
+}
+
+.export-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* 顏色 chip 按鈕：checkbox 視覺隱藏，label 本身即為可點擊的色塊按鈕 */
