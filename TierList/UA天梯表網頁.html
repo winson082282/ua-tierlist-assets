@@ -48,9 +48,35 @@
 <!--引入 html2canvas，用於將天梯表匯出成圖片-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<!-- 主要程式碼 -->
-<script src="./main.js"></script>
-<link rel="stylesheet" href="./style.css">
+<!-- 主要程式碼：本機走 local，非本機（含 Blogger）自動走 GitHub CDN -->
+<script>
+  (function () {
+    var host = (window.location.hostname || "").toLowerCase();
+    var protocol = window.location.protocol;
+    var isLocal = protocol === "file:" ||
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "::1" ||
+      host.indexOf("192.168.") === 0 ||
+      host.indexOf("10.") === 0;
 
-<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/style.css">
-<script src="https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/main.js"></script> -->
+    var basePath = isLocal
+      ? "./"
+      : "https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/";
+
+    if (!document.querySelector('link[data-ua-tierlist-style="1"]')) {
+      var style = document.createElement("link");
+      style.rel = "stylesheet";
+      style.href = basePath + "style.css";
+      style.setAttribute("data-ua-tierlist-style", "1");
+      document.head.appendChild(style);
+    }
+
+    if (!document.querySelector('script[data-ua-tierlist-main="1"]')) {
+      var mainScript = document.createElement("script");
+      mainScript.src = basePath + "main.js";
+      mainScript.setAttribute("data-ua-tierlist-main", "1");
+      document.body.appendChild(mainScript);
+    }
+  })();
+</script>
