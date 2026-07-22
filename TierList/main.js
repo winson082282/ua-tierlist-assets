@@ -161,6 +161,7 @@ function initSeriesFilter(filterOptions) {
         search: false,
         disableSelectAll: true,
         showValueAsTags: true,
+        popupDropboxBreakpoint: '3000px',
         optionsCount: 8
     });
 
