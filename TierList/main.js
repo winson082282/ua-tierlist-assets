@@ -151,14 +151,8 @@ $(document).ready(function () {
         closeOnSelect: false
     });
 
-    function isMobileForSeriesSearch() {
-        const byPointer = window.matchMedia && (window.matchMedia('(hover: none)').matches || window.matchMedia('(pointer: coarse)').matches);
-        const byWidth = window.innerWidth <= 768;
-        return byPointer || byWidth;
-    }
-
-    function syncSeriesSearchInputState() {
-        const shouldLock = isMobileForSeriesSearch();
+    function disableSeriesKeywordSearch() {
+        const shouldLock = true;
 
         // Select2 多選模式的關鍵字輸入框
         const inlineSearchInputs = document.querySelectorAll('.select2-container--default .select2-search--inline .select2-search__field');
@@ -184,10 +178,8 @@ $(document).ready(function () {
         });
     }
 
-    $seriesFilter.on('select2:open', syncSeriesSearchInputState);
-    window.addEventListener('resize', syncSeriesSearchInputState);
-    window.addEventListener('orientationchange', syncSeriesSearchInputState);
-    syncSeriesSearchInputState();
+    $seriesFilter.on('select2:open', disableSeriesKeywordSearch);
+    disableSeriesKeywordSearch();
 
     // 「清除選取」按鈕：只取消顏色 checkbox 勾選，不影響系列篩選與 tag 選取
     const clearColorBtn = document.getElementById('clear-color-filter');
