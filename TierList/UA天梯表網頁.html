@@ -80,11 +80,104 @@
         '紅': 4
     };
     
-    // 預設圖片（全域常數）
-    const defaultImg = 'https://placehold.co/100x100';
-    
     let allCards = []; // 儲存所有牌組資料
     let activeTag = ''; // 當前選中的 標籤 按鈕
+    let imageObserver = null;
+
+    function loadDeckImage(img) {
+      if (!img || img.dataset.loaded === 'true') return;
+
+      const realSrc = img.dataset.src;
+      if (!realSrc) return;
+
+      img.dataset.loaded = 'true';
+      img.src = realSrc;
+    }
+
+    function initLazyLoadImages(root) {
+      const scope = root || document;
+      const images = Array.from(scope.querySelectorAll('img[data-src]'));
+      if (images.length === 0) return;
+
+      if ('IntersectionObserver' in window) {
+        if (!imageObserver) {
+          imageObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (!entry.isIntersecting) return;
+              loadDeckImage(entry.target);
+              imageObserver.unobserve(entry.target);
+            });
+          }, {
+            root: null,
+            rootMargin: '300px 0px',
+            threshold: 0.01
+          });
+        }
+
+        images.forEach(function (img) {
+          if (img.dataset.loaded === 'true') return;
+          imageObserver.observe(img);
+        });
+        return;
+      }
+
+      images.forEach(loadDeckImage);
+    }
+
+    function waitForImageLoad(img) {
+      return new Promise(function (resolve) {
+        if (!img) {
+          resolve();
+          return;
+        }
+
+        const realSrc = img.dataset.src;
+        if (!realSrc) {
+          resolve();
+          return;
+        }
+
+        const isAlreadyLoaded = img.dataset.loaded === 'true' && img.complete && img.naturalWidth > 0;
+        if (isAlreadyLoaded) {
+          resolve();
+          return;
+        }
+
+        const onDone = function () {
+          resolve();
+        };
+
+        img.addEventListener('load', onDone, { once: true });
+        img.addEventListener('error', onDone, { once: true });
+        loadDeckImage(img);
+      });
+    }
+
+    async function forceLoadTierImages(root) {
+      if (!root) return;
+
+      const images = Array.from(root.querySelectorAll('img[data-src]'));
+      await Promise.all(images.map(waitForImageLoad));
+    }
+
+    function buildCardImg(card, isLazyCard) {
+      const defaultImg = 'https://placehold.co/100x100';
+      const lazyPlaceholderImg = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+      const imageSrc = card.src || defaultImg;
+      const commonAttrs = `
+        data-tag="${card.tag}"
+        data-color="${card.color}"
+        data-series="${card.series}"
+        crossorigin="anonymous"
+        onerror="this.onerror=null; this.src='${defaultImg}';"
+      `;
+      
+      if (isLazyCard) {
+        return `<img${commonAttrs} src="${lazyPlaceholderImg}" data-src="${imageSrc}" loading="lazy" />`;
+      }
+
+      return `<img${commonAttrs} src="${imageSrc}" />`;
+    }
 
     // 依目前選取的系列，計算實際存在的顏色集合；未選系列則回傳 null 代表全部可用
     function getAvailableColors(selectedSeries) {
@@ -232,7 +325,7 @@
             const color       = fields[4] ? fields[4].trim() : '';
             const iconName    = fields[5] ? fields[5].trim() : '';
             const href        = fields[6] ? fields[6].trim() : null;
-            const src         = iconName ? imgurl + iconName : defaultImg;
+            const src         = iconName ? imgurl + iconName : '';
 
             if (!isNaN(score) && src) {
                 cards.push({ score, tag, color, series, src, href: href || null, releaseDate });
@@ -291,7 +384,7 @@
         const container = document.getElementById('tier-rows-container');
         let html = '';
 
-        scores.forEach(score => {
+        scores.forEach((score, scoreIndex) => {
             html += `<div class="tier-row rank-${score}">`;
             html += `  <div class="tier-label">${score}分</div>`;
             html += `  <div class="tier-content">`;
@@ -299,14 +392,8 @@
             cards.filter(c => c.score === score).sort(compareCardsForSort).forEach(card => {
                 const colorClass = colorMap[card.color] || '';
                 const isActive = !activeTag || card.tag === activeTag;
-                
-                const img = `<img
-                    data-tag="${card.tag}"
-                    data-color="${card.color}"
-                    data-series="${card.series}"
-                    border="0" src="${card.src}"
-                    crossorigin="anonymous"
-                    onerror="this.onerror=null; this.src='${defaultImg}';" />`;
+                const isLazyCard = scoreIndex >= 4;
+                const img = buildCardImg(card, isLazyCard);
                 
                 const inner = card.href
                     ? `<a href="${card.href}" target="_blank" rel="noopener noreferrer">${img}</a>`
@@ -332,6 +419,7 @@
         });
 
         container.innerHTML = html;
+    initLazyLoadImages(container);
     }
 
     // --- 篩選邏輯（支援 Select2 系列篩選 + 標籤按鈕過濾） ---
@@ -397,7 +485,7 @@
     }
 
     // --- 匯出目前畫面的天梯表為 PNG 圖片 ---
-    function exportTierListImage() {
+    async function exportTierListImage() {
         const target = document.getElementById('tier-rows-container');
         const btn = document.getElementById('export-image-btn');
         if (!target || !btn) return;
@@ -406,11 +494,15 @@
         btn.disabled = true;
         btn.textContent = '匯出中...';
 
-        html2canvas(target, {
-            useCORS: true,
-            backgroundColor: '#faf6f0',
-            scale: 2
-        }).then(function (canvas) {
+      try {
+        await forceLoadTierImages(target);
+
+        const canvas = await html2canvas(target, {
+          useCORS: true,
+          backgroundColor: '#faf6f0',
+          scale: 2
+        });
+
             const link = document.createElement('a');
             const pad = n => String(n).padStart(2, '0');
             const now = new Date();
@@ -420,13 +512,13 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        }).catch(function (err) {
+      } catch (err) {
             console.error('匯出圖片失敗：', err);
             alert('匯出圖片失敗，請稍後再試。');
-        }).finally(function () {
+      } finally {
             btn.disabled = false;
             btn.textContent = originalText;
-        });
+      }
     }
 </script>
 
