@@ -1,0 +1,608 @@
+/* ★ 淡雅奶油主題 - 基礎設定 */
+body {
+    background: linear-gradient(135deg, #faf6f0 0%, #fdfbf7 100%);
+    font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    color: #6b5844;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.tier-list-container {
+    width: 100%;
+    max-width: 1400px;
+}
+
+/* 標題區 */
+.tier-list-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.tier-list-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(45deg, #c17a6a, #d4a574);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 5px;
+}
+
+.tier-list-header p {
+    color: #7d6b5c;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* 篩選區域 */
+.filter-section {
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(93, 74, 56, 0.15);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.filter-section label {
+    color: #6b5844;
+    font-size: 1.08rem;
+}
+
+/* Select2 自定義樣式 */
+.select2-container--default .select2-selection--multiple {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(93, 74, 56, 0.2) !important;
+    border-radius: 8px;
+    min-height: 46px;
+    font-size: 1rem;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #d4a574 !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    padding: 6px 10px;
+    gap: 6px;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: linear-gradient(135deg, #d4a574 0%, #c8956e 100%);
+    border-color: #c17a6a;
+    color: #fff;
+    font-size: 0.95rem;
+    padding: 4px 10px;
+}
+
+/* 每個已選標籤上的移除按鈕 (x)：放大並加強點擊回饋 */
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-right: 6px;
+    padding: 0 4px;
+    border-right: none;
+    border-radius: 4px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+/* 全部清除按鈕 (allowClear 產生的 x)：放大成圓形按鈕並加上 hover 回饋 */
+.select2-container--default .select2-selection--multiple .select2-selection__clear {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #c17a6a;
+    width: 26px;
+    height: 26px;
+    line-height: 24px;
+    text-align: center;
+    margin: 8px 8px 0 0;
+    border-radius: 50%;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__clear:hover {
+    background: rgba(193, 122, 106, 0.18);
+    color: #a85f4f;
+}
+
+.select2-container--default .select2-search--inline .select2-search__field {
+    font-size: 1rem;
+}
+
+.select2-dropdown {
+    font-size: 1rem;
+}
+
+.select2-container--default .select2-results__option {
+    padding: 8px 12px;
+}
+
+/* 下拉選單多欄位排版：選項數量多時用欄位取代單純上下捲動 */
+.select2-container--default .select2-results>.select2-results__options {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    max-height: min(600px, 70vh);
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.select2-container--default .select2-results>.select2-results__options>.select2-results__option {
+    width: 260px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.select2-container--default .select2-results__group {
+    font-weight: 700;
+    color: #6b5844;
+    background: rgba(212, 165, 116, 0.15);
+}
+
+/* 下拉選單 hover/鍵盤選取的高亮色，改用主題焦糖色取代 Select2 預設藍色 */
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #d4a574;
+    color: #fff;
+}
+
+/* 天梯表整體外框 */
+.tier-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* 單一級距行 */
+.tier-row {
+    display: flex;
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: opacity 0.3s ease;
+}
+
+/* 左側分數標籤區 */
+.tier-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90px;
+    min-width: 90px;
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.rank-10 .tier-label {
+    background: linear-gradient(135deg, #d9756a, #c85a52);
+}
+
+.rank-9 .tier-label {
+    background: linear-gradient(135deg, #dc8d6f, #d07960);
+}
+
+.rank-8 .tier-label {
+    background: linear-gradient(135deg, #dfa876, #d99462);
+}
+
+.rank-7 .tier-label {
+    background: linear-gradient(135deg, #dfc084, #d9ac70);
+}
+
+.rank-6 .tier-label {
+    background: linear-gradient(135deg, #d9c87c, #d3b468);
+}
+
+.rank-5 .tier-label {
+    background: linear-gradient(135deg, #cad085, #bec470);
+}
+
+.rank-4 .tier-label {
+    background: linear-gradient(135deg, #b8d896, #acd282);
+}
+
+.rank-3 .tier-label {
+    background: linear-gradient(135deg, #a5dea8, #99d295);
+}
+
+.rank-2 .tier-label {
+    background: linear-gradient(135deg, #98d9b8, #8ccda8);
+}
+
+.rank-1 .tier-label {
+    background: linear-gradient(135deg, #a8b8a8, #9cac9c);
+}
+
+.rank-0 .tier-label {
+    background: linear-gradient(135deg, #8f8f8f, #6f6f6f);
+}
+
+.tier-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 10px;
+    padding: 15px;
+    flex-grow: 1;
+}
+
+.deck-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.deck-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    background-color: #fff;
+    border: 2px solid rgba(93, 74, 56, 0.15);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: default;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.deck-card>img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.deck-card>a {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    cursor: pointer;
+}
+
+.deck-card>a>img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.link-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    font-size: 0.65rem;
+    line-height: 1;
+    color: #fff;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.deck-card.is-dimmed {
+    opacity: 0.3;
+    filter: grayscale(0.8) brightness(0.85);
+}
+
+.deck-card.is-active {
+    border-width: 3px;
+    box-shadow: 0 4px 12px rgba(193, 122, 106, 0.3);
+}
+
+.deck-name {
+    padding: 3px 0;
+    background: rgba(93, 74, 56, 0.92);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: normal;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    position: static;
+    opacity: 1;
+    transition: opacity 0.2s;
+    display: none;
+}
+
+.tag-chip {
+    width: 100%;
+    max-width: 70px;
+    padding: 4px 8px;
+    background: rgba(212, 165, 116, 0.95);
+    border: 1px solid rgba(93, 74, 56, 0.3);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    box-sizing: border-box;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    transition: background 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+}
+
+.tag-chip:hover {
+    background: rgba(193, 122, 106, 0.95);
+}
+
+.tag-chip.is-dimmed {
+    opacity: 0.3;
+    filter: grayscale(0.8) brightness(0.85);
+}
+
+/* 色彩變體 */
+.ua-red {
+    border-color: #e85d52;
+    box-shadow: 0 0 8px rgba(232, 93, 82, 0.4);
+}
+
+.ua-green {
+    border-color: #5fc96e;
+    box-shadow: 0 0 8px rgba(95, 201, 110, 0.4);
+}
+
+.ua-yellow {
+    border-color: #f0b850;
+    box-shadow: 0 0 8px rgba(240, 184, 80, 0.4);
+}
+
+.ua-blue {
+    border-color: #6b8fd9;
+    box-shadow: 0 0 8px rgba(107, 143, 217, 0.4);
+}
+
+.ua-purple {
+    border-color: #c084d9;
+    box-shadow: 0 0 8px rgba(192, 132, 217, 0.4);
+}
+
+.ua-red:hover {
+    box-shadow: 0 0 16px rgba(232, 93, 82, 0.7);
+}
+
+.ua-green:hover {
+    box-shadow: 0 0 16px rgba(95, 201, 110, 0.7);
+}
+
+.ua-yellow:hover {
+    box-shadow: 0 0 16px rgba(240, 184, 80, 0.7);
+}
+
+.ua-blue:hover {
+    box-shadow: 0 0 16px rgba(107, 143, 217, 0.7);
+}
+
+.ua-purple:hover {
+    box-shadow: 0 0 16px rgba(192, 132, 217, 0.7);
+}
+
+/* 顏色篩選區塊樣式 */
+.color-filter-group {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+.clear-filter-btn {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    background: transparent;
+    border: 1px solid rgba(193, 122, 106, 0.5);
+    border-radius: 999px;
+    color: #c17a6a;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.clear-filter-btn:hover {
+    background: #c17a6a;
+    color: #fff;
+}
+
+/* 匯出圖片按鈕 */
+.export-btn {
+    padding: 10px 18px;
+    background: linear-gradient(135deg, #d4a574 0%, #c8956e 100%);
+    border: 1px solid rgba(93, 74, 56, 0.3);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: background 0.2s ease, opacity 0.2s ease, transform 0.15s ease;
+}
+
+.export-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.export-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* 顏色 chip 按鈕：checkbox 視覺隱藏，label 本身即為可點擊的色塊按鈕 */
+.color-option {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.color-option:hover {
+    transform: translateY(-1px);
+}
+
+.color-option input[type="checkbox"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.color-option span {
+    pointer-events: none;
+}
+
+/* 各顏色未選中：淺色描邊風格 */
+.color-option:has(input[value="黃"]) {
+    border-color: rgba(240, 184, 80, 0.6);
+    background: rgba(240, 184, 80, 0.14);
+    color: #a3781f;
+}
+
+.color-option:has(input[value="紫"]) {
+    border-color: rgba(192, 132, 217, 0.6);
+    background: rgba(192, 132, 217, 0.14);
+    color: #7d4a94;
+}
+
+.color-option:has(input[value="藍"]) {
+    border-color: rgba(107, 143, 217, 0.6);
+    background: rgba(107, 143, 217, 0.14);
+    color: #3f5c9e;
+}
+
+.color-option:has(input[value="綠"]) {
+    border-color: rgba(95, 201, 110, 0.6);
+    background: rgba(95, 201, 110, 0.14);
+    color: #2f7d3d;
+}
+
+.color-option:has(input[value="紅"]) {
+    border-color: rgba(232, 93, 82, 0.6);
+    background: rgba(232, 93, 82, 0.14);
+    color: #b03d33;
+}
+
+/* 各顏色已選中：實色填滿 */
+.color-option:has(input[value="黃"]:checked) {
+    background: linear-gradient(135deg, #f0b850, #d9a03e);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(240, 184, 80, 0.45);
+}
+
+.color-option:has(input[value="紫"]:checked) {
+    background: linear-gradient(135deg, #c084d9, #a868c4);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(192, 132, 217, 0.45);
+}
+
+.color-option:has(input[value="藍"]:checked) {
+    background: linear-gradient(135deg, #6b8fd9, #5573c0);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(107, 143, 217, 0.45);
+}
+
+.color-option:has(input[value="綠"]:checked) {
+    background: linear-gradient(135deg, #5fc96e, #45ab54);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(95, 201, 110, 0.45);
+}
+
+.color-option:has(input[value="紅"]:checked) {
+    background: linear-gradient(135deg, #e85d52, #cf4438);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(232, 93, 82, 0.45);
+}
+
+/* 目前系列篩選下不存在的顏色：灰階顯示且不可點擊 */
+.color-option:has(input:disabled) {
+    opacity: 0.35;
+    filter: grayscale(0.6);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+@media (max-width: 600px) {
+    .tier-row {
+        flex-direction: column;
+    }
+
+    .tier-label {
+        width: 100%;
+        height: 35px;
+        min-height: 35px;
+        font-size: 1.1rem;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .tier-content {
+        grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+        gap: 6px;
+        padding: 10px;
+    }
+
+    .filter-section {
+        padding: 16px;
+    }
+
+    .color-filter-group {
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
+
+    .color-option {
+        padding: 8px 14px;
+        font-size: 0.95rem;
+    }
+
+    .select2-container--default .select2-results>.select2-results__options {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        max-height: 300px;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .select2-container--default .select2-results>.select2-results__options>.select2-results__option {
+        width: 100%;
+    }
+}
