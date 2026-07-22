@@ -461,3 +461,16 @@ async function exportTierListImage() {
         btn.textContent = originalText;
     }
 }
+
+function sendHeight() {
+    const height = document.documentElement.scrollHeight || document.body.scrollHeight;
+    window.parent.postMessage({ frameHeight: height }, '*');
+}
+
+// 網頁載入、視窗縮放或內容改變時重新計算高度
+window.addEventListener('load', sendHeight);
+window.addEventListener('resize', sendHeight);
+
+// 如果你有篩選器或動態展開功能，內容變動時也可觸發 sendHeight()
+const observer = new ResizeObserver(sendHeight);
+observer.observe(document.body);
