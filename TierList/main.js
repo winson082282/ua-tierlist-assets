@@ -462,19 +462,31 @@ async function exportTierListImage() {
     }
 }
 
-// 防抖與精確高度傳遞（避免無限長高）
+// 精準高度計算（排除多餘空白邊界）
 (function() {
   let lastHeight = 0;
 
   function sendHeight() {
-    // 取得當前內容的真實高度
-    const currentHeight = Math.max(
-      document.body.scrollHeight,
-      document.body.offsetHeight,
-      document.documentElement.scrollHeight
-    );
+    // 找出頁面中最下方的元素位置
+    const elements = document.querySelectorAll('body *');
+    let maxBottom = 0;
 
-    // 只有當高度變化超過 5px 時才發送，避免微小誤差造成無窮迴圈
+    elements.forEach(el => {
+      // 排除不可見元素
+      if (el.offsetHeight > 0 && el.offsetWidth > 0) {
+        const rect = el.getBoundingClientRect();
+        const top = rect.top + window.pageYOffset;
+        const bottom = top + rect.height;
+        if (bottom > maxBottom) {
+          maxBottom = bottom;
+        }
+      }
+    });
+
+    // 加上 20px 緩衝 padding，若計算失敗則退回預設高度
+    const currentHeight = maxBottom > 0 ? Math.ceil(maxBottom) + 20 : document.body.offsetHeight;
+
+    // 只有高度變化 > 5px 時才發送，避免無窮迴圈
     if (Math.abs(currentHeight - lastHeight) > 5) {
       lastHeight = currentHeight;
       window.parent.postMessage({ frameHeight: currentHeight }, '*');
