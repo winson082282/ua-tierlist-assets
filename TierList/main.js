@@ -462,15 +462,39 @@ async function exportTierListImage() {
     }
 }
 
-function sendHeight() {
-    const height = document.documentElement.scrollHeight || document.body.scrollHeight;
-    window.parent.postMessage({ frameHeight: height }, '*');
-}
+// 防抖與精確高度傳遞（避免無限長高）
+(function() {
+  let lastHeight = 0;
 
-// 網頁載入、視窗縮放或內容改變時重新計算高度
-window.addEventListener('load', sendHeight);
-window.addEventListener('resize', sendHeight);
+  function sendHeight() {
+    // 取得當前內容的真實高度
+    const currentHeight = Math.max(
+      document.body.scrollHeight,
+      document.body.offsetHeight,
+      document.documentElement.scrollHeight
+    );
 
-// 如果你有篩選器或動態展開功能，內容變動時也可觸發 sendHeight()
-const observer = new ResizeObserver(sendHeight);
-observer.observe(document.body);
+    // 只有當高度變化超過 5px 時才發送，避免微小誤差造成無窮迴圈
+    if (Math.abs(currentHeight - lastHeight) > 5) {
+      lastHeight = currentHeight;
+      window.parent.postMessage({ frameHeight: currentHeight }, '*');
+    }
+  }
+
+  // 網頁初始載入完畢後發送一次
+  window.addEventListener('load', sendHeight);
+
+  // 當使用者點擊篩選按鈕、展開或關閉卡片時觸發
+  document.addEventListener('click', function() {
+    setTimeout(sendHeight, 200); // 延遲 0.2 秒等動畫或 DOM 更新完畢
+  });
+
+  // 監控頁面元素增刪或內容變化
+  const observer = new MutationObserver(function() {
+    sendHeight();
+  });
+
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+  }
+})();
