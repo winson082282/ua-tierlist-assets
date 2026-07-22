@@ -142,19 +142,59 @@ function updateColorAvailability(selectedSeries) {
 }
 
 $(document).ready(function () {
-    $('#series-filter').select2({
+    const $seriesFilter = $('#series-filter');
+
+    $seriesFilter.select2({
         placeholder: "請選擇系列...",
         allowClear: true,
         minimumResultsForSearch: Infinity,
         closeOnSelect: false
     });
 
+    function isMobileForSeriesSearch() {
+        const byPointer = window.matchMedia && (window.matchMedia('(hover: none)').matches || window.matchMedia('(pointer: coarse)').matches);
+        const byWidth = window.innerWidth <= 768;
+        return byPointer || byWidth;
+    }
+
+    function syncSeriesSearchInputState() {
+        const shouldLock = isMobileForSeriesSearch();
+
+        // Select2 多選模式的關鍵字輸入框
+        const inlineSearchInputs = document.querySelectorAll('.select2-container--default .select2-search--inline .select2-search__field');
+        inlineSearchInputs.forEach(function (input) {
+            input.readOnly = shouldLock;
+            if (shouldLock) {
+                input.setAttribute('inputmode', 'none');
+            } else {
+                input.removeAttribute('inputmode');
+            }
+        });
+
+        // 保險處理：若下拉開啟時仍有搜尋輸入框，也同步套用
+        const dropdownSearchInputs = document.querySelectorAll('.select2-container--open .select2-search__field');
+        dropdownSearchInputs.forEach(function (input) {
+            input.readOnly = shouldLock;
+            if (shouldLock) {
+                input.setAttribute('inputmode', 'none');
+                input.blur();
+            } else {
+                input.removeAttribute('inputmode');
+            }
+        });
+    }
+
+    $seriesFilter.on('select2:open', syncSeriesSearchInputState);
+    window.addEventListener('resize', syncSeriesSearchInputState);
+    window.addEventListener('orientationchange', syncSeriesSearchInputState);
+    syncSeriesSearchInputState();
+
     // 「清除選取」按鈕：只取消顏色 checkbox 勾選，不影響系列篩選與 tag 選取
     const clearColorBtn = document.getElementById('clear-color-filter');
     if (clearColorBtn) {
         clearColorBtn.addEventListener('click', function () {
             document.querySelectorAll('#color-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
-            const selectedSeries = $('#series-filter').val();
+            const selectedSeries = $seriesFilter.val();
             updateColorAvailability(selectedSeries);
             filterCards(selectedSeries, []);
         });
@@ -174,16 +214,16 @@ $(document).ready(function () {
         .then(function () {
             // 統一的篩選觸發函式：分類篩選與顏色篩選共用
             function triggerFilter() {
-                const selectedSeries = $('#series-filter').val();
+                const selectedSeries = $seriesFilter.val();
                 updateColorAvailability(selectedSeries);
                 const selectedColors = Array.from(document.querySelectorAll('#color-checkboxes input[type="checkbox"]:checked')).map(i => i.value);
                 filterCards(selectedSeries, selectedColors);
             }
 
             // 初次載入時，依當下系列選取狀態同步一次顏色可用性
-            updateColorAvailability($('#series-filter').val());
+            updateColorAvailability($seriesFilter.val());
 
-            $('#series-filter').on('change', triggerFilter);
+            $seriesFilter.on('change', triggerFilter);
             // 監聽 checkbox 容器的變更（事件代理）
             const colorContainer = document.getElementById('color-checkboxes');
             if (colorContainer) colorContainer.addEventListener('change', triggerFilter);
