@@ -141,22 +141,45 @@ function updateColorAvailability(selectedSeries) {
     });
 }
 
-$(document).ready(function () {
-    const $seriesFilter = $('#series-filter');
+let seriesFilterEl = null;
+let bootstrapDone = false;
 
-    $seriesFilter.select2({
-        placeholder: "請選擇系列...",
-        allowClear: true,
-        minimumResultsForSearch: Infinity,
-        closeOnSelect: false
+function getSeriesFilterValues() {
+    if (!seriesFilterEl) return [];
+    const currentValue = seriesFilterEl.value;
+    if (Array.isArray(currentValue)) return currentValue;
+    if (!currentValue) return [];
+    return [currentValue];
+}
+
+function initSeriesFilter(filterOptions) {
+    VirtualSelect.init({
+        ele: '#series-filter',
+        options: filterOptions || [],
+        multiple: true,
+        placeholder: '請選擇系列...',
+        search: false,
+        disableSelectAll: true,
+        showValueAsTags: true,
+        optionsCount: 8
     });
+
+    // Virtual Select 會把原生 select 換成同 id 的容器，初始化後重新抓一次。
+    seriesFilterEl = document.getElementById('series-filter');
+}
+
+function bootstrapTierList() {
+    if (bootstrapDone) return;
+    bootstrapDone = true;
+
+    seriesFilterEl = document.getElementById('series-filter');
 
     // 「清除選取」按鈕：只取消顏色 checkbox 勾選，不影響系列篩選與 tag 選取
     const clearColorBtn = document.getElementById('clear-color-filter');
     if (clearColorBtn) {
         clearColorBtn.addEventListener('click', function () {
             document.querySelectorAll('#color-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
-            const selectedSeries = $seriesFilter.val();
+            const selectedSeries = getSeriesFilterValues();
             updateColorAvailability(selectedSeries);
             filterCards(selectedSeries, []);
         });
@@ -173,41 +196,63 @@ $(document).ready(function () {
         loadSeriesFilterOptions(),
         loadCardsFromSheet()
     ])
-        .then(function () {
+        .then(function ([filterOptions, cards]) {
+            allCards = cards;
+            renderCards(allCards);
+            const loadingEl = document.getElementById('card-loading');
+            if (loadingEl) loadingEl.style.display = 'none';
+            initSeriesFilter(filterOptions);
+
             // 統一的篩選觸發函式：分類篩選與顏色篩選共用
             function triggerFilter() {
-                const selectedSeries = $seriesFilter.val();
+                const selectedSeries = getSeriesFilterValues();
                 updateColorAvailability(selectedSeries);
                 const selectedColors = Array.from(document.querySelectorAll('#color-checkboxes input[type="checkbox"]:checked')).map(i => i.value);
                 filterCards(selectedSeries, selectedColors);
             }
 
             // 初次載入時，依當下系列選取狀態同步一次顏色可用性
-            updateColorAvailability($seriesFilter.val());
+            updateColorAvailability(getSeriesFilterValues());
 
-            $seriesFilter.on('change', triggerFilter);
+            if (seriesFilterEl) seriesFilterEl.addEventListener('change', triggerFilter);
             // 監聽 checkbox 容器的變更（事件代理）
             const colorContainer = document.getElementById('color-checkboxes');
             if (colorContainer) colorContainer.addEventListener('change', triggerFilter);
+
+            // 讓初始畫面和目前篩選狀態一致。
+            triggerFilter();
         })
         .catch(function (err) {
-            $('#card-loading').html('❌ 資料載入失敗，請重新整理頁面。');
+            const loadingEl = document.getElementById('card-loading');
+            if (loadingEl) loadingEl.textContent = '❌ 資料載入失敗，請重新整理頁面。';
+            console.error('[ERROR] 完整錯誤訊息：', err.message);
+            console.error('[ERROR] 完整堆疊：', err.stack);
             console.error('Google Sheet 讀取錯誤：', err);
         });
-});
+}
 
-// ★ 從選項分頁動態載入 <option>
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrapTierList);
+} else {
+    // main.js 可能在 DOMContentLoaded 之後才載入，這時要直接啟動。
+    bootstrapTierList();
+}
+
+// ★ 從選項分頁動態載入選項陣列（不修改 DOM，直接返回資料）
 async function loadSeriesFilterOptions() {
+    console.log('[DEBUG] 開始載入系列選項，URL =', FILTER_OPTIONS_URL);
     const response = await fetch(FILTER_OPTIONS_URL);
+    console.log('[DEBUG] 系列選項 fetch 回應狀態 =', response.status, response.statusText);
     if (!response.ok) throw new Error('HTTP ' + response.status);
 
     const csvText = await response.text();
+    console.log('[DEBUG] 系列選項 CSV 長度 =', csvText.length, '字元');
     const lines = csvText.trim().split('\n');
-    const select = document.getElementById('series-filter');
-    const groupMap = {};
+    const groupMap = {}; // { groupName: [...options] }
+    const ungroupedOptions = [];
 
     for (let i = 1; i < lines.length; i++) {
-        const fields = parseCSVLine(lines[i].trim());  // ← 更新呼叫名稱
+        const fields = parseCSVLine(lines[i].trim());
         if (!fields || fields.length < 2) continue;
 
         const value = fields[0].trim();
@@ -216,48 +261,46 @@ async function loadSeriesFilterOptions() {
         const count = fields[3] ? fields[3].trim() : '';
         if (!value || !label) continue;
 
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = label + ' (數量:' + count + ')';
+        const option = { label: label + ' (數量:' + count + ')', value: value };
 
         if (group) {
-            // 若該 group 的 optgroup 還沒建立，先建立它
-            if (!groupMap[group]) {
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = group;
-                select.appendChild(optgroup);
-                groupMap[group] = optgroup;
-            }
-            groupMap[group].appendChild(option);
+            if (!groupMap[group]) groupMap[group] = [];
+            groupMap[group].push(option);
         } else {
-            select.appendChild(option); // 沒有 group 就直接塞
+            ungroupedOptions.push(option);
         }
     }
 
-    $('#series-filter').trigger('change.select2');
+    // 組合成 Virtual Select 格式
+    const result = [];
+    
+    // 先加 grouped options
+    Object.entries(groupMap).forEach(([groupName, options]) => {
+        result.push({ label: groupName, options: options });
+    });
+    
+    // 再加 ungrouped options
+    result.push(...ungroupedOptions);
+
+    return result; // ★ 返回選項陣列
 }
 
 
 
-// --- 從 Google Sheet 讀取並渲染 ---
+// --- 從 Google Sheet 讀取卡片資料 ---
 async function loadCardsFromSheet() {
+    console.log('[DEBUG] 開始載入卡片資料，URL =', SHEET_CSV_URL);
     const response = await fetch(SHEET_CSV_URL);
+    console.log('[DEBUG] 卡片資料 fetch 回應狀態 =', response.status, response.statusText);
     if (!response.ok) throw new Error('HTTP ' + response.status);
 
     const csvText = await response.text();
-    allCards = parseDeckCSV(csvText);
-    renderCards(allCards);
-
-    document.getElementById('card-loading').style.display = 'none';
-}
-
-// --- 解析牌組 CSV（支援含逗號的欄位，有引號包覆的情況）---
-function parseDeckCSV(csvText) {  // ← parseCSV 改為 parseDeckCSV
+    console.log('[DEBUG] 卡片資料 CSV 長度 =', csvText.length, '字元');
     const lines = csvText.trim().split('\n');
     const cards = [];
 
     for (let i = 1; i < lines.length; i++) {
-        const fields = parseCSVLine(lines[i].trim());  // ← 更新呼叫名稱
+        const fields = parseCSVLine(lines[i].trim());
         if (!fields || fields.length < 3) continue;
 
         const imgurl = 'https://res.cloudinary.com/c9t2zuha/image/upload/';
@@ -365,7 +408,7 @@ function renderCards(cards) {
     initLazyLoadImages(container);
 }
 
-// --- 篩選邏輯（支援 Select2 系列篩選 + 標籤按鈕過濾） ---
+// --- 篩選邏輯（支援系列篩選 + 標籤按鈕過濾） ---
 function filterCards(selectedSeries, selectedColors) {
     const hasSeries = selectedSeries && selectedSeries.length > 0;
     const hasColor = selectedColors && selectedColors.length > 0;
@@ -381,22 +424,22 @@ function filterCards(selectedSeries, selectedColors) {
         const color = img.dataset.color || '';
         const series = img.dataset.series || '';
 
-        // Select2 篩選條件
+        // 系列篩選元件條件
         const seriesMatch = !hasSeries || selectedSeries.includes(series);
         const colorMatch = !hasColor || selectedColors.includes(color);
-        const select2Pass = seriesMatch && colorMatch;
+        const seriesFilterPass = seriesMatch && colorMatch;
 
         // Tag 按鈕篩選條件
         const buttonPass = !activeTag || tag === activeTag;
 
-        // 根據 Select2 過濾條件決定 wrapper 是否顯示
-        if (!select2Pass) {
-            // Select2 過濾掉了，隱藏整個 wrapper（卡片 + 按鈕）
+        // 根據系列篩選條件決定 wrapper 是否顯示
+        if (!seriesFilterPass) {
+            // 系列篩選過濾掉了，隱藏整個 wrapper（卡片 + 按鈕）
             wrapper.style.display = 'none';
             cardEl.classList.remove('is-active', 'is-dimmed');
             if (btnEl) btnEl.classList.remove('is-dimmed');
         } else {
-            // Select2 通過，顯示 wrapper
+            // 系列篩選通過，顯示 wrapper
             wrapper.style.display = '';
 
             // 再根據按鈕過濾應用樣式
@@ -422,7 +465,7 @@ function filterCards(selectedSeries, selectedColors) {
 // --- Tag 按鈕點擊處理 ---
 function toggleTag(tag) {
     activeTag = activeTag === tag ? '' : tag;
-    const selectedSeries = $('#series-filter').val();
+    const selectedSeries = getSeriesFilterValues();
     const selectedColors = Array.from(document.querySelectorAll('#color-checkboxes input[type="checkbox"]:checked')).map(i => i.value);
     filterCards(selectedSeries, selectedColors);
 }

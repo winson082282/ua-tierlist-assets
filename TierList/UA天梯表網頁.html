@@ -29,7 +29,9 @@
     </div>
     <div style="margin-bottom: 15px;">
       <label for="series-filter" style="display: block; margin-bottom: 8px; font-weight: 600;">系列篩選：</label>
-      <select id="series-filter" multiple="multiple" style="width: 100%;"></select>
+      <!-- <select id="series-filter" multiple="multiple" style="width: 100%;"></select> -->
+
+      <div id="series-filter"></div>
     </div>
     <div>
       <button type="button" id="export-image-btn" class="export-btn">📸 匯出圖片</button>
@@ -40,10 +42,10 @@
   <div id="tier-rows-container" class="tier-rows"></div>
 </div>
 
-<!--引入 jQuery 與 Select2 的 JS-->
+<!--引入 jQuery 與 Virtual Select 的 JS-->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/virtual-select-plugin@1.0.45/dist/virtual-select.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/virtual-select-plugin@1.0.45/dist/virtual-select.min.css" rel="stylesheet" />
 
 <!--引入 html2canvas，用於將天梯表匯出成圖片-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
