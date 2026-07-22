@@ -151,36 +151,6 @@ $(document).ready(function () {
         closeOnSelect: false
     });
 
-    function disableSeriesKeywordSearch() {
-        const shouldLock = true;
-
-        // Select2 多選模式的關鍵字輸入框
-        const inlineSearchInputs = document.querySelectorAll('.select2-container--default .select2-search--inline .select2-search__field');
-        inlineSearchInputs.forEach(function (input) {
-            input.readOnly = shouldLock;
-            if (shouldLock) {
-                input.setAttribute('inputmode', 'none');
-            } else {
-                input.removeAttribute('inputmode');
-            }
-        });
-
-        // 保險處理：若下拉開啟時仍有搜尋輸入框，也同步套用
-        const dropdownSearchInputs = document.querySelectorAll('.select2-container--open .select2-search__field');
-        dropdownSearchInputs.forEach(function (input) {
-            input.readOnly = shouldLock;
-            if (shouldLock) {
-                input.setAttribute('inputmode', 'none');
-                input.blur();
-            } else {
-                input.removeAttribute('inputmode');
-            }
-        });
-    }
-
-    $seriesFilter.on('select2:open', disableSeriesKeywordSearch);
-    disableSeriesKeywordSearch();
-
     // 「清除選取」按鈕：只取消顏色 checkbox 勾選，不影響系列篩選與 tag 選取
     const clearColorBtn = document.getElementById('clear-color-filter');
     if (clearColorBtn) {

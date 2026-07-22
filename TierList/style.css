@@ -118,6 +118,21 @@ body {
     font-size: 1rem;
 }
 
+/* 系列多選不使用關鍵字搜尋：隱藏 inline 與 dropdown 搜尋輸入 */
+.select2-container--default .select2-selection--multiple .select2-search--inline {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+.select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field,
+.select2-container--default .select2-search--dropdown {
+    display: none !important;
+}
+
 .select2-dropdown {
     font-size: 1rem;
 }
