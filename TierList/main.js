@@ -144,6 +144,11 @@ function updateColorAvailability(selectedSeries) {
 let seriesFilterEl = null;
 let bootstrapDone = false;
 
+function setLoadingText(text) {
+    const loadingEl = document.getElementById('card-loading');
+    if (loadingEl) loadingEl.textContent = text;
+}
+
 function getSeriesFilterValues() {
     if (!seriesFilterEl) return [];
     const currentValue = seriesFilterEl.value;
@@ -196,13 +201,22 @@ function bootstrapTierList() {
     }
 
     // 同時載入選項與卡片資料
+    setLoadingText('⏳ 正在連線取得資料...');
     Promise.all([
-        loadSeriesFilterOptions(),
-        loadCardsFromSheet()
+        loadSeriesFilterOptions().then(function (opts) {
+            setLoadingText('✅ 系列選項載入完成，等待卡片資料...');
+            return opts;
+        }),
+        loadCardsFromSheet().then(function (cards) {
+            setLoadingText('✅ 卡片資料載入完成（共 ' + cards.length + ' 張），正在繪製天梯表...');
+            return cards;
+        })
     ])
         .then(function ([filterOptions, cards]) {
             allCards = cards;
+            setLoadingText('🖌️ 正在繪製天梯表...');
             renderCards(allCards);
+            setLoadingText('⚙️ 正在初始化篩選器...');
             initSeriesFilter(filterOptions);
             const loadingEl = document.getElementById('card-loading');
             if (loadingEl) loadingEl.style.display = 'none';
@@ -227,8 +241,7 @@ function bootstrapTierList() {
             triggerFilter();
         })
         .catch(function (err) {
-            const loadingEl = document.getElementById('card-loading');
-            if (loadingEl) loadingEl.textContent = '❌ 資料載入失敗，請重新整理頁面。';
+            setLoadingText('❌ 資料載入失敗，請重新整理頁面。');
             console.error('[ERROR] 完整錯誤訊息：', err.message);
             console.error('[ERROR] 完整堆疊：', err.stack);
             console.error('Google Sheet 讀取錯誤：', err);
@@ -383,7 +396,7 @@ function renderCards(cards) {
         cards.filter(c => c.score === score).sort(compareCardsForSort).forEach(card => {
             const colorClass = colorMap[card.color] || '';
             const isActive = !activeTag || card.tag === activeTag;
-            const isLazyCard = scoreIndex >= 4;
+            const isLazyCard = scoreIndex >= 3;
             const img = buildCardImg(card, isLazyCard);
 
             const inner = card.href
