@@ -161,8 +161,11 @@ function initSeriesFilter(filterOptions) {
         search: false,
         disableSelectAll: true,
         showValueAsTags: true,
+        hasOptionDescription: true,
         popupDropboxBreakpoint: '3000px',
-        optionsCount: 8
+
+        // 自訂選中後 Tag 顯示的內容，若有別名就顯示別名，沒有就退回顯示 label
+        selectedLabelRenderer: function (option) { return option.alias || option.label; }
     });
 
     // Virtual Select 會把原生 select 換成同 id 的容器，初始化後重新抓一次。
@@ -239,30 +242,34 @@ if (document.readyState === 'loading') {
     bootstrapTierList();
 }
 
-// ★ 從選項分頁動態載入選項陣列（不修改 DOM，直接返回資料）
+// 從選項分頁動態載入選項陣列
 async function loadSeriesFilterOptions() {
-    console.log('[DEBUG] 開始載入系列選項，URL =', FILTER_OPTIONS_URL);
     const response = await fetch(FILTER_OPTIONS_URL);
-    console.log('[DEBUG] 系列選項 fetch 回應狀態 =', response.status, response.statusText);
     if (!response.ok) throw new Error('HTTP ' + response.status);
 
     const csvText = await response.text();
-    console.log('[DEBUG] 系列選項 CSV 長度 =', csvText.length, '字元');
     const lines = csvText.trim().split('\n');
     const groupMap = {}; // { groupName: [...options] }
     const ungroupedOptions = [];
 
     for (let i = 1; i < lines.length; i++) {
         const fields = parseCSVLine(lines[i].trim());
+        //跳過表頭
         if (!fields || fields.length < 2) continue;
 
         const value = fields[0].trim();
         const label = fields[1].trim();
-        const group = fields[2] ? fields[2].trim() : '';
-        const count = fields[3] ? fields[3].trim() : '';
+
         if (!value || !label) continue;
 
-        const option = { label: label + ' (數量:' + count + ')', value: value };
+        const alias = fields[2] ? fields[2].trim() : '';
+        const group = fields[3] ? fields[3].trim() : '';
+        const count = fields[4] ? fields[4].trim() : '—';
+        const average = fields[5] ? fields[5].trim() : '—';
+        const highest = fields[6] ? fields[6].trim() : '—';
+        const lowest = fields[7] ? fields[7].trim() : '—';
+        const description = `${alias} 數量: ${count}個 · 平均分數: ${average} · 最高分數: ${highest} · 最低分數: ${lowest}`;
+        const option = { value: value, label: label, description: description, alias: alias };
 
         if (group) {
             if (!groupMap[group]) groupMap[group] = [];
@@ -274,12 +281,12 @@ async function loadSeriesFilterOptions() {
 
     // 組合成 Virtual Select 格式
     const result = [];
-    
-    // 先加 grouped options
-    Object.entries(groupMap).forEach(([groupName, options]) => {
-        result.push({ label: groupName, options: options });
+
+    // 先加 grouped options（倒序）
+    Object.entries(groupMap).reverse().forEach(([groupName, options]) => {
+        result.push({ label: `發售年度: ${groupName}`, options: options });
     });
-    
+
     // 再加 ungrouped options
     result.push(...ungroupedOptions);
 
@@ -290,13 +297,10 @@ async function loadSeriesFilterOptions() {
 
 // --- 從 Google Sheet 讀取卡片資料 ---
 async function loadCardsFromSheet() {
-    console.log('[DEBUG] 開始載入卡片資料，URL =', SHEET_CSV_URL);
     const response = await fetch(SHEET_CSV_URL);
-    console.log('[DEBUG] 卡片資料 fetch 回應狀態 =', response.status, response.statusText);
     if (!response.ok) throw new Error('HTTP ' + response.status);
 
     const csvText = await response.text();
-    console.log('[DEBUG] 卡片資料 CSV 長度 =', csvText.length, '字元');
     const lines = csvText.trim().split('\n');
     const cards = [];
 
