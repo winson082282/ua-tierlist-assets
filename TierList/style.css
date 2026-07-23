@@ -187,18 +187,22 @@ body {
 }
 
 .vscomp-value-tag {
-    margin: 2px 6px 2px 0;
-    padding: 3px 8px;
+    display: inline-flex;
+    align-items: center;
+    margin: 4px 8px 4px 0 !important;
+    padding: 8px 12px !important;
     color: #fff;
-    font-size: 0.95rem;
+    font-size: 1.05rem !important;
+    line-height: 1.25 !important;
     background: linear-gradient(135deg, var(--accent-2) 0%, var(--accent-3) 100%);
     border: 1px solid var(--accent-1);
     border-radius: 999px;
 }
 
 .vscomp-value-tag .vscomp-value-tag-clear-button {
-    margin-left: 6px;
-    color: rgba(255, 255, 255, 0.9);
+    margin-left: 8px;
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 1.1em;
     border-radius: 4px;
     transition: background 0.15s ease, color 0.15s ease;
 }
