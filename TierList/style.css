@@ -193,7 +193,7 @@ body {
     padding: 8px 12px !important;
     color: #fff;
     font-size: 1.05rem !important;
-    line-height: 1.25 !important;
+    line-height: 1.5 !important;
     background: linear-gradient(135deg, var(--accent-2) 0%, var(--accent-3) 100%);
     border: 1px solid var(--accent-1);
     border-radius: 999px;
@@ -591,32 +591,6 @@ body {
     opacity: 1;
     background: rgba(93, 74, 56, 0.92);
     transition: opacity 0.2s;
-}
-
-.tag-chip {
-    width: 100%;
-    max-width: 70px;
-    box-sizing: border-box;
-    padding: 4px 8px;
-    color: #fff;
-    font-size: 0.62rem;
-    font-weight: 700;
-    text-align: center;
-    cursor: pointer;
-    background: rgba(212, 165, 116, 0.95);
-    border: 1px solid var(--panel-border-strong);
-    border-radius: 6px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-    transition: background 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
-}
-
-.tag-chip:hover {
-    background: rgba(193, 122, 106, 0.95);
-}
-
-.tag-chip.is-dimmed {
-    opacity: 0.3;
-    filter: grayscale(0.8) brightness(0.85);
 }
 
 /* tag 顏色變體 */

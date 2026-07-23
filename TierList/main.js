@@ -22,7 +22,6 @@ const colorOrder = {
 };
 
 let allCards = []; // 儲存所有牌組資料
-let activeTag = ''; // 當前選中的 標籤 按鈕
 let imageObserver = null;
 
 function loadDeckImage(img) {
@@ -106,7 +105,6 @@ function buildCardImg(card, isLazyCard) {
     const lazyPlaceholderImg = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
     const imageSrc = card.src || defaultImg;
     const commonAttrs = `
-        data-tag="${card.tag}"
         data-color="${card.color}"
         data-series="${card.series}"
         crossorigin="anonymous"
@@ -183,7 +181,7 @@ function bootstrapTierList() {
 
     seriesFilterEl = document.getElementById('series-filter');
 
-    // 「清除選取」按鈕：只取消顏色 checkbox 勾選，不影響系列篩選與 tag 選取
+    // 「清除選取」按鈕：只取消顏色 checkbox 勾選，不影響系列篩選
     const clearColorBtn = document.getElementById('clear-color-filter');
     if (clearColorBtn) {
         clearColorBtn.addEventListener('click', function () {
@@ -325,14 +323,13 @@ async function loadCardsFromSheet() {
         const score = parseInt(fields[0]);
         const series = fields[1] ? fields[1].trim() : '';
         const releaseDate = fields[2] ? fields[2].trim() : '';
-        const tag = fields[3] ? fields[3].trim() : '';
         const color = fields[4] ? fields[4].trim() : '';
         const iconName = fields[5] ? fields[5].trim() : '';
         const href = fields[6] ? fields[6].trim() : null;
         const src = iconName ? imgurl + iconName : '';
 
         if (!isNaN(score) && src) {
-            cards.push({ score, tag, color, series, src, href: href || null, releaseDate });
+            cards.push({ score, color, series, src, href: href || null, releaseDate });
         }
     }
     return cards;
@@ -395,7 +392,6 @@ function renderCards(cards) {
 
         cards.filter(c => c.score === score).sort(compareCardsForSort).forEach(card => {
             const colorClass = colorMap[card.color] || '';
-            const isActive = !activeTag || card.tag === activeTag;
             const isLazyCard = scoreIndex >= 3;
             const img = buildCardImg(card, isLazyCard);
 
@@ -404,16 +400,11 @@ function renderCards(cards) {
                 : img;
             const linkBadge = card.href ? `<span class="link-badge">🔗</span>` : '';
 
-            const activeClass = isActive ? 'is-active' : 'is-dimmed';
             html += `<div class="deck-card-wrapper">`;
-            html += `  <div class="deck-card ${colorClass} ${activeClass}">`;
+            html += `  <div class="deck-card ${colorClass} is-active">`;
             html += `    ${inner}`;
             html += `    ${linkBadge}`;
             html += `  </div>`;
-
-            if (card.tag) {
-                html += `  <button type="button" class="tag-chip" onclick="toggleTag('${card.tag}')">${card.tag}</button>`;
-            }
 
             html += `</div>`;
         });
@@ -426,7 +417,7 @@ function renderCards(cards) {
     initLazyLoadImages(container);
 }
 
-// --- 篩選邏輯（支援系列篩選 + 標籤按鈕過濾） ---
+// --- 篩選邏輯（支援系列篩選 + 顏色篩選） ---
 function filterCards(selectedSeries, selectedColors) {
     const hasSeries = selectedSeries && selectedSeries.length > 0;
     const hasColor = selectedColors && selectedColors.length > 0;
@@ -434,11 +425,9 @@ function filterCards(selectedSeries, selectedColors) {
     // 遍歷所有卡片 wrapper，先重置 display
     document.querySelectorAll('.deck-card-wrapper').forEach(wrapper => {
         const cardEl = wrapper.querySelector('.deck-card');
-        const btnEl = wrapper.querySelector('.tag-chip');
         const img = cardEl.querySelector('img');
         if (!img) return;
 
-        const tag = img.dataset.tag || '';
         const color = img.dataset.color || '';
         const series = img.dataset.series || '';
 
@@ -447,29 +436,15 @@ function filterCards(selectedSeries, selectedColors) {
         const colorMatch = !hasColor || selectedColors.includes(color);
         const seriesFilterPass = seriesMatch && colorMatch;
 
-        // Tag 按鈕篩選條件
-        const buttonPass = !activeTag || tag === activeTag;
-
         // 根據系列篩選條件決定 wrapper 是否顯示
         if (!seriesFilterPass) {
-            // 系列篩選過濾掉了，隱藏整個 wrapper（卡片 + 按鈕）
+            // 系列篩選過濾掉了，隱藏整個 wrapper
             wrapper.style.display = 'none';
             cardEl.classList.remove('is-active', 'is-dimmed');
-            if (btnEl) btnEl.classList.remove('is-dimmed');
         } else {
-            // 系列篩選通過，顯示 wrapper
             wrapper.style.display = '';
-
-            // 再根據按鈕過濾應用樣式
-            if (buttonPass) {
-                cardEl.classList.remove('is-dimmed');
-                cardEl.classList.add('is-active');
-                if (btnEl) btnEl.classList.remove('is-dimmed');
-            } else {
-                cardEl.classList.remove('is-active');
-                cardEl.classList.add('is-dimmed');
-                if (btnEl) btnEl.classList.add('is-dimmed');
-            }
+            cardEl.classList.remove('is-dimmed');
+            cardEl.classList.add('is-active');
         }
     });
 
@@ -478,14 +453,6 @@ function filterCards(selectedSeries, selectedColors) {
         const visibleWrappers = row.querySelectorAll('.deck-card-wrapper:not([style*="display: none"])').length;
         row.style.display = visibleWrappers > 0 ? '' : 'none';
     });
-}
-
-// --- Tag 按鈕點擊處理 ---
-function toggleTag(tag) {
-    activeTag = activeTag === tag ? '' : tag;
-    const selectedSeries = getSeriesFilterValues();
-    const selectedColors = Array.from(document.querySelectorAll('#color-checkboxes input[type="checkbox"]:checked')).map(i => i.value);
-    filterCards(selectedSeries, selectedColors);
 }
 
 // --- 匯出目前畫面的天梯表為 PNG 圖片 ---
