@@ -24,6 +24,13 @@ const colorOrder = {
 let allCards = []; // 儲存所有牌組資料
 let imageObserver = null;
 
+function getFilterAnimations() {
+    if (!window.UATierListFilterAnimations) {
+        throw new Error('filter-animations.js 尚未載入');
+    }
+    return window.UATierListFilterAnimations;
+}
+
 function loadDeckImage(img) {
     if (!img || img.dataset.loaded === 'true') return;
 
@@ -419,40 +426,31 @@ function renderCards(cards) {
 
 // --- 篩選邏輯（支援系列篩選 + 顏色篩選） ---
 function filterCards(selectedSeries, selectedColors) {
+    const filterAnimations = getFilterAnimations();
     const hasSeries = selectedSeries && selectedSeries.length > 0;
     const hasColor = selectedColors && selectedColors.length > 0;
+    const filterResults = Array.from(document.querySelectorAll('.deck-card-wrapper'))
+        .map(function (wrapper) {
+            const cardEl = wrapper.querySelector('.deck-card');
+            if (!cardEl) return null;
 
-    // 遍歷所有卡片 wrapper，先重置 display
-    document.querySelectorAll('.deck-card-wrapper').forEach(wrapper => {
-        const cardEl = wrapper.querySelector('.deck-card');
-        const img = cardEl.querySelector('img');
-        if (!img) return;
+            const img = cardEl.querySelector('img');
+            if (!img) return null;
 
-        const color = img.dataset.color || '';
-        const series = img.dataset.series || '';
+            const color = img.dataset.color || '';
+            const series = img.dataset.series || '';
+            const seriesMatch = !hasSeries || selectedSeries.includes(series);
+            const colorMatch = !hasColor || selectedColors.includes(color);
 
-        // 系列篩選元件條件
-        const seriesMatch = !hasSeries || selectedSeries.includes(series);
-        const colorMatch = !hasColor || selectedColors.includes(color);
-        const seriesFilterPass = seriesMatch && colorMatch;
+            return {
+                wrapper: wrapper,
+                cardEl: cardEl,
+                shouldShow: seriesMatch && colorMatch
+            };
+        })
+        .filter(Boolean);
 
-        // 根據系列篩選條件決定 wrapper 是否顯示
-        if (!seriesFilterPass) {
-            // 系列篩選過濾掉了，隱藏整個 wrapper
-            wrapper.style.display = 'none';
-            cardEl.classList.remove('is-active', 'is-dimmed');
-        } else {
-            wrapper.style.display = '';
-            cardEl.classList.remove('is-dimmed');
-            cardEl.classList.add('is-active');
-        }
-    });
-
-    // 隱藏空的級距行
-    document.querySelectorAll('.tier-row').forEach(row => {
-        const visibleWrappers = row.querySelectorAll('.deck-card-wrapper:not([style*="display: none"])').length;
-        row.style.display = visibleWrappers > 0 ? '' : 'none';
-    });
+    filterAnimations.applyFilterResults(filterResults);
 }
 
 // --- 匯出目前畫面的天梯表為 PNG 圖片 ---
