@@ -203,9 +203,9 @@ function bootstrapTierList() {
         .then(function ([filterOptions, cards]) {
             allCards = cards;
             renderCards(allCards);
+            initSeriesFilter(filterOptions);
             const loadingEl = document.getElementById('card-loading');
             if (loadingEl) loadingEl.style.display = 'none';
-            initSeriesFilter(filterOptions);
 
             // 統一的篩選觸發函式：分類篩選與顏色篩選共用
             function triggerFilter() {

@@ -134,8 +134,9 @@ body {
 
 .filter-row {
     display: flex;
-    align-items: flex-start;
-    gap: 18px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
     margin-bottom: 15px;
 }
 
@@ -145,14 +146,10 @@ body {
     overflow: visible;
 }
 
-.series-filter-item {
-    flex: 1 1 320px;
-    min-width: 260px;
-}
-
-.color-filter-item {
-    flex: 1.5 1 520px;
-    min-width: 360px;
+#series-filter {
+    display: block;
+    width: 100%;
+    max-width: 100%;
 }
 
 .filter-title {
@@ -165,6 +162,8 @@ body {
    系列篩選（Virtual Select）
 ========================= */
 .vscomp-wrapper {
+    width: 100%;
+    max-width: 100%;
     min-height: 46px;
     background: rgba(255, 255, 255, 0.7);
     border: 1px solid rgba(93, 74, 56, 0.2);
@@ -671,14 +670,7 @@ body {
     }
 
     .filter-row {
-        flex-wrap: wrap;
-        gap: 14px;
-    }
-
-    .series-filter-item,
-    .color-filter-item {
-        min-width: 0;
-        flex: 1 1 100%;
+        gap: 12px;
     }
 
     .color-option {
