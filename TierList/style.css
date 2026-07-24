@@ -471,7 +471,19 @@ body {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    transition: opacity 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.tier-row.is-filter-row-hidden {
+    display: none;
+}
+
+.tier-row.is-filter-row-pre-enter,
+.tier-row.is-filter-row-leaving {
+    opacity: 0;
+    transform: translateY(10px);
 }
 
 .tier-label {
@@ -547,6 +559,20 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 4px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.deck-card-wrapper.is-filter-hidden {
+    display: none;
+}
+
+.deck-card-wrapper.is-filter-pre-enter,
+.deck-card-wrapper.is-filter-leaving {
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
 }
 
 .deck-card {

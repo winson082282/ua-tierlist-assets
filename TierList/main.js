@@ -24,6 +24,13 @@ const colorOrder = {
 let allCards = []; // 儲存所有牌組資料
 let imageObserver = null;
 
+function getFilterAnimations() {
+    if (!window.UATierListFilterAnimations) {
+        throw new Error('filter-animations.js 尚未載入');
+    }
+    return window.UATierListFilterAnimations;
+}
+
 function loadDeckImage(img) {
     if (!img || img.dataset.loaded === 'true') return;
 

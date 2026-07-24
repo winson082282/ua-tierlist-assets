@@ -69,9 +69,11 @@
       : "https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/";
 
       //Note:CDN連結
+      //https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/filter-animations.js
       //https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/style.css
       //https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/main.js
       //Note:刷新CDN連結
+      //https://purge.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/filter-animations.js
       //https://purge.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/style.css
       //https://purge.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/TierList/main.js
     if (!document.querySelector('link[data-ua-tierlist-style="1"]')) {
@@ -82,11 +84,34 @@
       document.head.appendChild(style);
     }
 
-    if (!document.querySelector('script[data-ua-tierlist-main="1"]')) {
+    function appendTierListScript(src, marker, onLoad) {
+      var script = document.createElement("script");
+      script.src = src;
+      script.async = false;
+      script.setAttribute(marker, "1");
+      if (onLoad) script.addEventListener("load", onLoad, { once: true });
+      document.body.appendChild(script);
+      return script;
+    }
+
+    function ensureMainScript() {
+      if (document.querySelector('script[data-ua-tierlist-main="1"]')) return;
       var mainScript = document.createElement("script");
       mainScript.src = basePath + "main.js";
+      mainScript.async = false;
       mainScript.setAttribute("data-ua-tierlist-main", "1");
       document.body.appendChild(mainScript);
+    }
+
+    var animationScript = document.querySelector('script[data-ua-tierlist-animation="1"]');
+    if (animationScript) {
+      if (window.UATierListFilterAnimations) {
+        ensureMainScript();
+      } else {
+        animationScript.addEventListener("load", ensureMainScript, { once: true });
+      }
+    } else {
+      appendTierListScript(basePath + "filter-animations.js", "data-ua-tierlist-animation", ensureMainScript);
     }
   })();
 </script>
