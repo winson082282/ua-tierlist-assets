@@ -142,6 +142,40 @@ function updateColorAvailability(selectedSeries) {
 let seriesFilterEl = null;
 let bootstrapDone = false;
 
+function setupFilterSectionToggle() {
+    const filterSection = document.getElementById('filter-section');
+    const toggleBtn = document.getElementById('toggle-filter-section');
+    const toggleState = toggleBtn ? toggleBtn.querySelector('.toggle-state') : null;
+    if (!filterSection || !toggleBtn) return;
+
+    const storageKey = 'ua-tierlist-filter-collapsed';
+
+    function applyFilterCollapseState(collapsed) {
+        filterSection.classList.toggle('is-collapsed', collapsed);
+        filterSection.classList.toggle('is-expanded', !collapsed);
+        toggleBtn.setAttribute('aria-expanded', String(!collapsed));
+        if (toggleState) toggleState.textContent = collapsed ? '展開' : '收合';
+    }
+
+    let initialCollapsed = false;
+    try {
+        initialCollapsed = localStorage.getItem(storageKey) === '1';
+    } catch (err) {
+        initialCollapsed = false;
+    }
+    applyFilterCollapseState(initialCollapsed);
+
+    toggleBtn.addEventListener('click', function () {
+        const collapsed = !filterSection.classList.contains('is-collapsed');
+        applyFilterCollapseState(collapsed);
+        try {
+            localStorage.setItem(storageKey, collapsed ? '1' : '0');
+        } catch (err) {
+            // 忽略 localStorage 不可用情況
+        }
+    });
+}
+
 function setLoadingText(text) {
     const displayValue = !!(text && text.trim()) ? '' : 'none';
     const loadingEl = document.getElementById('card-loading');
@@ -182,6 +216,8 @@ function initSeriesFilter(filterOptions) {
 function bootstrapTierList() {
     if (bootstrapDone) return;
     bootstrapDone = true;
+
+    setupFilterSectionToggle();
 
     seriesFilterEl = document.getElementById('series-filter');
 

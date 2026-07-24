@@ -148,7 +148,7 @@ body {
 /* =========================
    篩選區塊容器與版面
 ========================= */
-.filter-section {
+#filter-section {
     position: relative;
     z-index: 20;
     margin-bottom: 20px;
@@ -159,7 +159,77 @@ body {
     box-shadow: var(--panel-shadow);
 }
 
-.filter-section label {
+.filter-header {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 12px;
+}
+
+.filter-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    color: var(--accent-1);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(193, 122, 106, 0.45);
+    border-radius: 999px;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.filter-toggle-btn:hover {
+    color: #fff;
+    background: var(--accent-1);
+    border-color: var(--accent-1);
+}
+
+.toggle-title {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.filter-toggle-btn:hover .toggle-title {
+    color: #fff;
+}
+
+.toggle-state {
+    opacity: 0.85;
+}
+
+.toggle-icon {
+    display: inline-block;
+    font-size: 0.75rem;
+    line-height: 1;
+    transform-origin: center;
+    transition: transform 0.22s ease;
+}
+
+.filter-content {
+    max-height: 1000px;
+    opacity: 1;
+    overflow: visible;
+    transition: max-height 0.28s ease, opacity 0.2s ease;
+}
+
+#filter-section.is-collapsed .filter-header {
+    margin-bottom: 0;
+}
+
+#filter-section.is-collapsed .filter-content {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#filter-section.is-collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+#filter-section label {
     color: var(--text-main);
     font-size: 1.08rem;
 }
@@ -197,6 +267,7 @@ body {
     width: 100%;
     max-width: 100%;
     min-height: 46px;
+    box-sizing: border-box;
     background: rgba(255, 255, 255, 0.7);
     border: 1px solid rgba(93, 74, 56, 0.2);
     border-radius: 8px;
@@ -665,8 +736,12 @@ body {
    RWD
 ========================= */
 @media (max-width: 600px) {
-    .filter-section {
+    #filter-section {
         padding: 16px;
+    }
+
+    .filter-header {
+        margin-bottom: 10px;
     }
 
     .filter-row {

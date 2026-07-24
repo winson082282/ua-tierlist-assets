@@ -1,40 +1,55 @@
 <link rel="icon" href="data:,">
 <div class="tier-list-container">
-  <div class="filter-section">
-    <div class="filter-row">
-      <div class="filter-item series-filter-item">
-        <label for="series-filter" class="filter-title">系列篩選：</label>
-        <div id="series-filter"></div>
-      </div>
-      <div class="filter-item color-filter-item">
-        <label for="color-checkboxes" class="filter-title">顏色篩選：</label>
-        <div id="color-checkboxes" class="color-filter-group">
-          <label class="color-option">
-            <input type="checkbox" value="黃" id="color_cb_黃">
-            <span>黃🟡</span>
-          </label>
-          <label class="color-option">
-            <input type="checkbox" value="紫" id="color_cb_紫">
-            <span>紫🟣</span>
-          </label>
-          <label class="color-option">
-            <input type="checkbox" value="藍" id="color_cb_藍">
-            <span>藍🔵</span>
-          </label>
-          <label class="color-option">
-            <input type="checkbox" value="綠" id="color_cb_綠">
-            <span>綠🟢</span>
-          </label>
-          <label class="color-option">
-            <input type="checkbox" value="紅" id="color_cb_紅">
-            <span>紅🔴</span>
-          </label>
-          <button type="button" id="clear-color-filter" class="clear-filter-btn">清除顏色選取</button>
+  <div class="is-expanded" id="filter-section">
+    <div class="filter-header">
+      <button
+        type="button"
+        id="toggle-filter-section"
+        class="filter-toggle-btn"
+        aria-expanded="true"
+        aria-controls="filter-section-content"
+      >
+        <span class="toggle-title">篩選條件</span>
+        <span class="toggle-state">收合</span>
+        <span class="toggle-icon" aria-hidden="true">▾</span>
+      </button>
+    </div>
+    <div id="filter-section-content" class="filter-content">
+      <div class="filter-row">
+        <div class="filter-item series-filter-item">
+          <label for="series-filter" class="filter-title">系列篩選：</label>
+          <div id="series-filter"></div>
+        </div>
+        <div class="filter-item color-filter-item">
+          <label for="color-checkboxes" class="filter-title">顏色篩選：</label>
+          <div id="color-checkboxes" class="color-filter-group">
+            <label class="color-option">
+              <input type="checkbox" value="黃" id="color_cb_黃">
+              <span>黃🟡</span>
+            </label>
+            <label class="color-option">
+              <input type="checkbox" value="紫" id="color_cb_紫">
+              <span>紫🟣</span>
+            </label>
+            <label class="color-option">
+              <input type="checkbox" value="藍" id="color_cb_藍">
+              <span>藍🔵</span>
+            </label>
+            <label class="color-option">
+              <input type="checkbox" value="綠" id="color_cb_綠">
+              <span>綠🟢</span>
+            </label>
+            <label class="color-option">
+              <input type="checkbox" value="紅" id="color_cb_紅">
+              <span>紅🔴</span>
+            </label>
+            <button type="button" id="clear-color-filter" class="clear-filter-btn">清除顏色選取</button>
+          </div>
         </div>
       </div>
-    </div>
-    <div>
-      <button type="button" id="export-image-btn" class="export-btn">📸 匯出圖片</button>
+      <div>
+        <button type="button" id="export-image-btn" class="export-btn">📸 匯出圖片</button>
+      </div>
     </div>
   </div>
   <div id="tier-rows-container" class="tier-rows"></div>
