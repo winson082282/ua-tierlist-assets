@@ -141,6 +141,39 @@ function updateColorAvailability(selectedSeries) {
 
 let seriesFilterEl = null;
 let bootstrapDone = false;
+let syncFilterSpacerHeight = null;
+
+function setupFilterFloatingLayout() {
+    const filterSection = document.getElementById('filter-section');
+    const spacer = document.getElementById('filter-section-spacer');
+    if (!filterSection || !spacer) return null;
+
+    let rafId = 0;
+
+    function updateSpacerHeight() {
+        rafId = 0;
+        const computedStyle = window.getComputedStyle(filterSection);
+        const topOffset = parseFloat(computedStyle.top) || 0;
+        const filterHeight = filterSection.getBoundingClientRect().height;
+        const spacerHeight = Math.max(0, Math.ceil(filterHeight + topOffset));
+        spacer.style.height = spacerHeight + 'px';
+    }
+
+    function scheduleUpdate() {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(updateSpacerHeight);
+    }
+
+    scheduleUpdate();
+    window.addEventListener('resize', scheduleUpdate);
+
+    if ('ResizeObserver' in window) {
+        const resizeObserver = new ResizeObserver(scheduleUpdate);
+        resizeObserver.observe(filterSection);
+    }
+
+    return scheduleUpdate;
+}
 
 function setupFilterSectionToggle() {
     const filterSection = document.getElementById('filter-section');
@@ -168,6 +201,7 @@ function setupFilterSectionToggle() {
     toggleBtn.addEventListener('click', function () {
         const collapsed = !filterSection.classList.contains('is-collapsed');
         applyFilterCollapseState(collapsed);
+        if (syncFilterSpacerHeight) syncFilterSpacerHeight();
         try {
             localStorage.setItem(storageKey, collapsed ? '1' : '0');
         } catch (err) {
@@ -218,6 +252,7 @@ function bootstrapTierList() {
     bootstrapDone = true;
 
     setupFilterSectionToggle();
+    syncFilterSpacerHeight = setupFilterFloatingLayout();
 
     seriesFilterEl = document.getElementById('series-filter');
 
@@ -256,6 +291,7 @@ function bootstrapTierList() {
             renderCards(allCards);
             setLoadingText('⚙️ 正在初始化篩選器...');
             initSeriesFilter(filterOptions);
+            if (syncFilterSpacerHeight) syncFilterSpacerHeight();
             setLoadingText('');
 
             // 統一的篩選觸發函式：分類篩選與顏色篩選共用
