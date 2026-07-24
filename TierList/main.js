@@ -143,8 +143,12 @@ let seriesFilterEl = null;
 let bootstrapDone = false;
 
 function setLoadingText(text) {
+    const displayValue = !!(text && text.trim()) ? '' : 'none';
     const loadingEl = document.getElementById('card-loading');
-    if (loadingEl) loadingEl.textContent = text;
+    const loadingRowEl = document.querySelector('.loading-row');
+
+    loadingRowEl.style.display = displayValue;
+    loadingEl.textContent = text;
 }
 
 function getSeriesFilterValues() {
@@ -216,8 +220,7 @@ function bootstrapTierList() {
             renderCards(allCards);
             setLoadingText('⚙️ 正在初始化篩選器...');
             initSeriesFilter(filterOptions);
-            const loadingEl = document.getElementById('card-loading');
-            if (loadingEl) loadingEl.style.display = 'none';
+            setLoadingText('');
 
             // 統一的篩選觸發函式：分類篩選與顏色篩選共用
             function triggerFilter() {
@@ -303,8 +306,6 @@ async function loadSeriesFilterOptions() {
 
     return result; // ★ 返回選項陣列
 }
-
-
 
 // --- 從 Google Sheet 讀取卡片資料 ---
 async function loadCardsFromSheet() {
@@ -437,15 +438,7 @@ function filterCards(selectedSeries, selectedColors) {
         const seriesFilterPass = seriesMatch && colorMatch;
 
         // 根據系列篩選條件決定 wrapper 是否顯示
-        if (!seriesFilterPass) {
-            // 系列篩選過濾掉了，隱藏整個 wrapper
-            wrapper.style.display = 'none';
-            cardEl.classList.remove('is-active', 'is-dimmed');
-        } else {
-            wrapper.style.display = '';
-            cardEl.classList.remove('is-dimmed');
-            cardEl.classList.add('is-active');
-        }
+        wrapper.style.display = seriesFilterPass ? '' : 'none';
     });
 
     // 隱藏空的級距行
