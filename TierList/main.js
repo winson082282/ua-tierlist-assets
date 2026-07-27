@@ -142,21 +142,59 @@ function updateColorAvailability(selectedSeries) {
 let seriesFilterEl = null;
 let bootstrapDone = false;
 let syncFilterSpacerHeight = null;
+const FILTER_TOP_OFFSET = 20;
+let tierListContainerEl = null;
+let hostContainerEl = null;
+let isBloggerHostMode = false;
+
+function detectHostContainer(tierListContainer) {
+    if (!tierListContainer) return null;
+
+    const hostByClosest = tierListContainer.closest('.post-body.entry-content.float-container');
+    if (hostByClosest) return hostByClosest;
+
+    const parent = tierListContainer.parentElement;
+    if (!parent) return null;
+
+    const hasAllClasses = parent.classList.contains('post-body') &&
+        parent.classList.contains('entry-content') &&
+        parent.classList.contains('float-container');
+
+    return hasAllClasses ? parent : null;
+}
 
 function setupFilterFloatingLayout() {
     const filterSection = document.getElementById('filter-section');
     const spacer = document.getElementById('filter-section-spacer');
-    if (!filterSection || !spacer) return null;
+    if (!filterSection || !spacer || !tierListContainerEl) return null;
+
+    filterSection.style.setProperty('--filter-top-offset', FILTER_TOP_OFFSET + 'px');
 
     let rafId = 0;
 
+    function updateFilterFloatingPosition() {
+        if (!isBloggerHostMode) return;
+
+        const containerRect = tierListContainerEl.getBoundingClientRect();
+        const containerTopInPage = window.scrollY + containerRect.top;
+        const filterHeight = filterSection.getBoundingClientRect().height;
+        const minTop = FILTER_TOP_OFFSET;
+        const maxTop = Math.max(minTop, tierListContainerEl.scrollHeight - filterHeight);
+        const scrolledTop = window.scrollY - containerTopInPage + FILTER_TOP_OFFSET;
+        const nextTop = Math.min(maxTop, Math.max(minTop, scrolledTop));
+
+        filterSection.style.top = Math.round(nextTop) + 'px';
+    }
+
     function updateSpacerHeight() {
         rafId = 0;
-        const computedStyle = window.getComputedStyle(filterSection);
-        const topOffset = parseFloat(computedStyle.top) || 0;
+        const topOffset = isBloggerHostMode
+            ? FILTER_TOP_OFFSET
+            : (parseFloat(window.getComputedStyle(filterSection).top) || 0);
         const filterHeight = filterSection.getBoundingClientRect().height;
         const spacerHeight = Math.max(0, Math.ceil(filterHeight + topOffset));
         spacer.style.height = spacerHeight + 'px';
+        updateFilterFloatingPosition();
     }
 
     function scheduleUpdate() {
@@ -166,6 +204,13 @@ function setupFilterFloatingLayout() {
 
     scheduleUpdate();
     window.addEventListener('resize', scheduleUpdate);
+
+    if (isBloggerHostMode) {
+        window.addEventListener('scroll', scheduleUpdate, { passive: true });
+        if (hostContainerEl) {
+            hostContainerEl.addEventListener('scroll', scheduleUpdate, { passive: true });
+        }
+    }
 
     if ('ResizeObserver' in window) {
         const resizeObserver = new ResizeObserver(scheduleUpdate);
@@ -250,6 +295,14 @@ function initSeriesFilter(filterOptions) {
 function bootstrapTierList() {
     if (bootstrapDone) return;
     bootstrapDone = true;
+
+    tierListContainerEl = document.querySelector('.tier-list-container');
+    hostContainerEl = detectHostContainer(tierListContainerEl);
+    isBloggerHostMode = !!hostContainerEl;
+
+    if (tierListContainerEl) {
+        tierListContainerEl.classList.toggle('in-blogger-host', isBloggerHostMode);
+    }
 
     setupFilterSectionToggle();
     syncFilterSpacerHeight = setupFilterFloatingLayout();

@@ -149,8 +149,9 @@ body {
    篩選區塊容器與版面
 ========================= */
 #filter-section {
+    --filter-top-offset: 20px;
     position: fixed;
-    top: 20px;
+    top: var(--filter-top-offset);
     left: 0;
     right: 0;
     z-index: 20;
@@ -163,6 +164,19 @@ body {
     border: 1px solid var(--panel-border);
     border-radius: 14px;
     box-shadow: var(--panel-shadow);
+}
+
+.tier-list-container.in-blogger-host {
+    position: relative;
+}
+
+.tier-list-container.in-blogger-host #filter-section {
+    position: absolute;
+    top: var(--filter-top-offset);
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
 }
 
 #filter-section-spacer {
