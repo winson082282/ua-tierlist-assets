@@ -524,7 +524,7 @@ function renderCards(cards) {
             const inner = card.href
                 ? `<a href="${card.href}" target="_blank" rel="noopener noreferrer">${img}</a>`
                 : img;
-            const linkBadge = card.href ? `<span class="link-badge">🔗</span>` : '';
+            const linkBadge = card.href ? `<span class="link-badge" data-html2canvas-ignore="true">🔗</span>` : '';
 
             html += `<div class="deck-card-wrapper">`;
             html += `  <div class="deck-card ${colorClass} is-active">`;
