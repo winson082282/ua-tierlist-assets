@@ -172,15 +172,15 @@ let isBloggerHostMode = false;
 function detectHostContainer(tierListContainer) {
     if (!tierListContainer) return null;
 
-    const hostByClosest = tierListContainer.closest('.post-body.entry-content.float-container');
+    const hostByClosest = tierListContainer.closest('.post-body.entry-content');
     if (hostByClosest) return hostByClosest;
 
     const parent = tierListContainer.parentElement;
     if (!parent) return null;
 
-    const hasAllClasses = parent.classList.contains('post-body') &&
-        parent.classList.contains('entry-content') &&
-        parent.classList.contains('float-container');
+    const hasAllClasses = parent.classList.contains('post-body') 
+        && parent.classList.contains('entry-content');
+        //&& parent.classList.contains('float-container');
 
     return hasAllClasses ? parent : null;
 }
