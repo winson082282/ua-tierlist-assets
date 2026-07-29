@@ -77,8 +77,8 @@ function waitForImageLoad(img) {
             return;
         }
 
-        const isAlreadyLoaded = img.dataset.loaded === 'true' && img.complete && img.naturalWidth > 0;
-        if (isAlreadyLoaded) {
+        // complete=true 代表成功或失敗都已結束，不需再等待事件。
+        if (img.complete) {
             resolve();
             return;
         }
@@ -93,11 +93,33 @@ function waitForImageLoad(img) {
     });
 }
 
-async function forceLoadTierImages(root) {
+async function forceLoadTierImages(root, onProgress) {
     if (!root) return;
 
     const images = Array.from(root.querySelectorAll('img[data-src]'));
-    await Promise.all(images.map(waitForImageLoad));
+    const total = images.length;
+    let doneCount = 0;
+
+    if (typeof onProgress === 'function') onProgress(doneCount, total);
+
+    // 先強制把所有 lazy 圖片切換到真實來源，再統一等待完成。
+    images.forEach(function (img) {
+        if (!img) return;
+        const realSrc = img.dataset.src;
+        if (!realSrc) return;
+
+        if (img.dataset.loaded !== 'true' || img.getAttribute('src') !== realSrc) {
+            img.dataset.loaded = 'true';
+            img.src = realSrc;
+        }
+    });
+
+    await Promise.all(images.map(function (img) {
+        return waitForImageLoad(img).then(function () {
+            doneCount += 1;
+            if (typeof onProgress === 'function') onProgress(doneCount, total);
+        });
+    }));
 }
 
 function buildCardImg(card, isLazyCard) {
@@ -584,7 +606,14 @@ async function exportTierListImage() {
     btn.textContent = '匯出中...';
 
     try {
-        await forceLoadTierImages(target);
+        await forceLoadTierImages(target, function (done, total) {
+            if (total > 0) {
+                btn.textContent = '圖片載入中... ' + done + '/' + total;
+            } else {
+                btn.textContent = '匯出中...';
+            }
+        });
+        btn.textContent = '匯出中...';
 
         const canvas = await html2canvas(target, {
             useCORS: true,
