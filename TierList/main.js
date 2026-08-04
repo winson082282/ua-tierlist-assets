@@ -467,7 +467,7 @@ async function loadCardsFromSheet() {
         const fields = parseCSVLine(lines[i].trim());
         if (!fields || fields.length < 3) continue;
 
-        const imgurl = 'https://res.cloudinary.com/c9t2zuha/image/upload/';
+        const imgurl = 'https://res.cloudinary.com/mizuoni/image/upload/';
         const score = parseInt(fields[0]);
         const series = fields[1] ? fields[1].trim() : '';
         const releaseDate = fields[2] ? fields[2].trim() : '';
