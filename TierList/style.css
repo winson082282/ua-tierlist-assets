@@ -661,16 +661,22 @@ body {
     overflow: hidden;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .deck-card > img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 .deck-card > a {
     display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     height: 100%;
     cursor: pointer;
@@ -680,6 +686,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 .link-badge {
