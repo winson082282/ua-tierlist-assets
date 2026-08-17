@@ -602,10 +602,16 @@ async function exportTierListImage() {
     if (!target || !btn) return;
 
     const originalText = btn.textContent;
+    const lazyImages = Array.from(target.querySelectorAll('img[loading="lazy"]'));
     btn.disabled = true;
     btn.textContent = '匯出中...';
 
     try {
+        // 匯出時解除原生 lazy loading，避免未滾動到的圖片不開始載入。
+        lazyImages.forEach(function (img) {
+            img.removeAttribute('loading');
+        });
+
         await forceLoadTierImages(target, function (done, total) {
             if (total > 0) {
                 btn.textContent = '圖片載入中... ' + done + '/' + total;
@@ -634,6 +640,9 @@ async function exportTierListImage() {
         console.error('匯出圖片失敗：', err);
         alert('匯出圖片失敗，請稍後再試。');
     } finally {
+        lazyImages.forEach(function (img) {
+            img.setAttribute('loading', 'lazy');
+        });
         btn.disabled = false;
         btn.textContent = originalText;
     }
