@@ -467,14 +467,15 @@ async function loadCardsFromSheet() {
         const fields = parseCSVLine(lines[i].trim());
         if (!fields || fields.length < 3) continue;
 
-        const imgurl = 'https://res.cloudinary.com/mizuoni/image/upload/';
+        // const imgurl = 'https://res.cloudinary.com/mizuoni/image/upload/';
+        const imgurl = 'https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/DeckIcon/';
         const score = parseInt(fields[0]);
         const series = fields[1] ? fields[1].trim() : '';
         const releaseDate = fields[2] ? fields[2].trim() : '';
         const color = fields[4] ? fields[4].trim() : '';
         const iconName = fields[5] ? fields[5].trim() : '';
         const href = fields[6] ? fields[6].trim() : null;
-        const src = iconName ? imgurl + iconName : '';
+        const src = iconName ? imgurl + iconName + '.jpg' : '';
 
         if (!isNaN(score) && src) {
             cards.push({ score, color, series, src, href: href || null, releaseDate });
