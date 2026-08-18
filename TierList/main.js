@@ -1,5 +1,7 @@
 // Google Sheet CSV 網址
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=218268368&single=true&output=csv';
+// const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=218268368&single=true&output=csv';
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=142384709&single=true&output=csv';
+
 // 選項分頁
 const FILTER_OPTIONS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=2069717497&single=true&output=csv';
 
@@ -349,22 +351,22 @@ function bootstrapTierList() {
     }
 
     // 同時載入選項與卡片資料
-    setLoadingText('⏳ 正在連線取得資料...');
+    setLoadingText('正在連線取得資料...');
     Promise.all([
         loadSeriesFilterOptions().then(function (opts) {
-            setLoadingText('✅ 系列選項載入完成，等待卡片資料...');
+            setLoadingText('系列選項載入完成，等待卡片資料...');
             return opts;
         }),
         loadCardsFromSheet().then(function (cards) {
-            setLoadingText('✅ 卡片資料載入完成（共 ' + cards.length + ' 張），正在繪製天梯表...');
+            setLoadingText('卡片資料載入完成（共 ' + cards.length + ' 張），正在繪製天梯表...');
             return cards;
         })
     ])
         .then(function ([filterOptions, cards]) {
             allCards = cards;
-            setLoadingText('🖌️ 正在繪製天梯表...');
+            setLoadingText('正在繪製天梯表...');
             renderCards(allCards);
-            setLoadingText('⚙️ 正在初始化篩選器...');
+            setLoadingText('正在初始化篩選器...');
             initSeriesFilter(filterOptions);
             if (syncFilterSpacerHeight) syncFilterSpacerHeight();
             setLoadingText('');
@@ -389,7 +391,7 @@ function bootstrapTierList() {
             triggerFilter();
         })
         .catch(function (err) {
-            setLoadingText('❌ 資料載入失敗，請重新整理頁面。');
+            setLoadingText('資料載入失敗，請重新整理頁面。');
             console.error('[ERROR] 完整錯誤訊息：', err.message);
             console.error('[ERROR] 完整堆疊：', err.stack);
             console.error('Google Sheet 讀取錯誤：', err);
@@ -459,6 +461,8 @@ async function loadCardsFromSheet() {
     const response = await fetch(SHEET_CSV_URL);
     if (!response.ok) throw new Error('HTTP ' + response.status);
 
+    setLoadingText('卡片csv成功載入，正在解析資料...');
+
     const csvText = await response.text();
     const lines = csvText.trim().split('\n');
     const cards = [];
@@ -470,14 +474,17 @@ async function loadCardsFromSheet() {
         // const imgurl = 'https://res.cloudinary.com/mizuoni/image/upload/';
         //const imgurl = 'https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/DeckIcon/';
         const imgurl = 'https://i.postimg.cc/';
-        const score = parseInt(fields[0]);
-        const series = fields[1] ? fields[1].trim() : '';
-        const releaseDate = fields[2] ? fields[2].trim() : '';
-        const color = fields[4] ? fields[4].trim() : '';
-        const iconName = fields[5] ? fields[5].trim() : '';
-        const href = fields[6] ? fields[6].trim() : null;
+        const score = parseInt(fields[1]);
+        const series = fields[3] ? fields[3].trim() : '';
+        const color = fields[5] ? fields[5].trim() : '';
+        const iconName = fields[6] ? fields[6].trim() : '';
         const PostimgID = fields[7] ? fields[7].trim() : null;
+        const releaseDate = fields[8] ? fields[8].trim() : '';
+        const href = fields[9] ? fields[9].trim() : null;
         const src = iconName ? imgurl + PostimgID + '/' + iconName + '.jpg' : '';
+
+        //先將圖片網址設為空字串，用於測試
+        src = '';
 
         if (!isNaN(score) && src) {
             cards.push({ score, color, series, src, href: href || null, releaseDate });
