@@ -468,14 +468,16 @@ async function loadCardsFromSheet() {
         if (!fields || fields.length < 3) continue;
 
         // const imgurl = 'https://res.cloudinary.com/mizuoni/image/upload/';
-        const imgurl = 'https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/DeckIcon/';
+        //const imgurl = 'https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/DeckIcon/';
+        const imgurl = 'https://i.postimg.cc/';
         const score = parseInt(fields[0]);
         const series = fields[1] ? fields[1].trim() : '';
         const releaseDate = fields[2] ? fields[2].trim() : '';
         const color = fields[4] ? fields[4].trim() : '';
         const iconName = fields[5] ? fields[5].trim() : '';
         const href = fields[6] ? fields[6].trim() : null;
-        const src = iconName ? imgurl + iconName + '.jpg' : '';
+        const PostimgID = fields[7] ? fields[7].trim() : null;
+        const src = iconName ? imgurl + PostimgID + '/' + iconName + '.jpg' : '';
 
         if (!isNaN(score) && src) {
             cards.push({ score, color, series, src, href: href || null, releaseDate });
