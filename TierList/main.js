@@ -1,5 +1,5 @@
 // Google Sheet CSV 網址
-// const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=218268368&single=true&output=csv';
+//const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=218268368&single=true&output=csv';
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjV26EfSqCY1ztrkCsPVfj3DkKW9Yz_rlYNsjumSrm72yyZGL6eTc-ETFFymI1s-nthf_FVi2OhP2v/pub?gid=142384709&single=true&output=csv';
 
 // 選項分頁
@@ -475,19 +475,17 @@ async function loadCardsFromSheet() {
         //const imgurl = 'https://cdn.jsdelivr.net/gh/winson082282/ua-tierlist-assets@main/DeckIcon/';
         const imgurl = 'https://i.postimg.cc/';
         const score = parseInt(fields[1]);
+        const diff = fields[2] ? fields[2].trim() : '';
         const series = fields[3] ? fields[3].trim() : '';
-        const color = fields[5] ? fields[5].trim() : '';
-        const iconName = fields[6] ? fields[6].trim() : '';
-        const PostimgID = fields[7] ? fields[7].trim() : null;
-        const releaseDate = fields[8] ? fields[8].trim() : '';
-        const href = fields[9] ? fields[9].trim() : null;
+        const color = fields[4] ? fields[4].trim() : '';
+        const iconName = fields[5] ? fields[5].trim() : '';
+        const PostimgID = fields[6] ? fields[6].trim() : null;
+        const releaseDate = fields[7] ? fields[7].trim() : '';
+        const href = fields[8] ? fields[8].trim() : null;
         const src = iconName ? imgurl + PostimgID + '/' + iconName + '.jpg' : '';
 
-        //先將圖片網址設為空字串，用於測試
-        src = '';
-
         if (!isNaN(score) && src) {
-            cards.push({ score, color, series, src, href: href || null, releaseDate });
+            cards.push({ score, color, series, diff, src, href: href || null, releaseDate });
         }
     }
     return cards;
@@ -500,7 +498,7 @@ function parseReleaseDate(str) {
     return isNaN(d.getTime()) ? null : d;
 }
 
-// --- 分數段內排序：1. 顏色（黃→紫→藍→綠→紅） 2. 出售日期倒序（新到舊，空白排最前） ---
+// --- 分數段內排序：1. 顏色（黃→藍→紫→綠→紅） 2. 出售日期倒序（新到舊，空白排最前） ---
 function compareCardsForSort(a, b) {
     const colorDiff = (colorOrder[a.color] ?? 999) - (colorOrder[b.color] ?? 999);
     if (colorDiff !== 0) return colorDiff;
@@ -557,10 +555,23 @@ function renderCards(cards) {
                 ? `<a href="${card.href}" target="_blank" rel="noopener noreferrer">${img}</a>`
                 : img;
             const linkBadge = card.href ? `<span class="link-badge" data-html2canvas-ignore="true">🔗</span>` : '';
+            const diff = String(card.diff || '').trim().toLowerCase();
+            let diffBadge = '';
+
+            if (/^\+(?:[1-9]|10)$/.test(diff)) {
+                diffBadge = `<span class="diff-badge diff-up" aria-label="排名上升 ${diff.slice(1)}">${diff}</span>`;
+            } else if (/^-(?:[1-9]|10)$/.test(diff)) {
+                diffBadge = `<span class="diff-badge diff-down" aria-label="排名下降 ${diff.slice(1)}">${diff}</span>`;
+            } else if (diff === '0') {
+                diffBadge = '<span class="diff-badge diff-same" aria-label="排名沒有變化">±0</span>';
+            } else if (diff === 'new') {
+                diffBadge = '<span class="diff-badge diff-new" aria-label="新加入">NEW</span>';
+            }
 
             html += `<div class="deck-card-wrapper">`;
             html += `  <div class="deck-card ${colorClass} is-active">`;
             html += `    ${inner}`;
+            html += `    ${diffBadge}`;
             html += `    ${linkBadge}`;
             html += `  </div>`;
 
