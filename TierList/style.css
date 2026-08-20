@@ -159,7 +159,7 @@ body {
     margin: 0 auto;
     box-sizing: border-box;
     margin-bottom: 0;
-    padding: 22px 24px;
+    padding: 16px 20px;
     background: rgba(255, 255, 255, 0.88);
     border: 1px solid var(--panel-border);
     border-radius: 14px;
@@ -185,7 +185,8 @@ body {
 
 .filter-header {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 12px;
 }
 
@@ -262,8 +263,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
-    margin-bottom: 15px;
+    gap: 16px;
+    margin-bottom: 0;
 }
 
 .filter-item {
@@ -290,7 +291,7 @@ body {
 .vscomp-wrapper {
     width: 100%;
     max-width: 100%;
-    min-height: 46px;
+    min-height: 42px;
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.7);
     border: 1px solid rgba(93, 74, 56, 0.2);
@@ -304,7 +305,7 @@ body {
 }
 
 .vscomp-toggle-button {
-    min-height: 46px;
+    min-height: 42px;
     padding: 6px 10px;
 }
 
@@ -317,10 +318,10 @@ body {
     display: inline-flex;
     align-items: center;
     margin: 4px 8px 4px 0 !important;
-    padding: 8px 12px !important;
+    padding: 6px 10px !important;
     color: #fff;
-    font-size: 1.05rem !important;
-    line-height: 1.5 !important;
+    font-size: 0.95rem !important;
+    line-height: 1.4 !important;
     background: linear-gradient(135deg, var(--accent-2) 0%, var(--accent-3) 100%);
     border: 1px solid var(--accent-1);
     border-radius: 999px;
@@ -406,13 +407,13 @@ body {
     justify-content: center;
     gap: 4px;
     flex-shrink: 0;
-    padding: 10px 20px;
+    padding: 6px 14px;
     color: inherit;
-    font-size: 1.05rem;
+    font-size: 0.9rem;
     font-weight: 700;
     white-space: nowrap;
     cursor: pointer;
-    border: 2px solid transparent;
+    border: 1.5px solid transparent;
     border-radius: 999px;
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
@@ -526,9 +527,9 @@ body {
     justify-content: center;
     gap: 4px;
     flex-shrink: 0;
-    padding: 10px 20px;
+    padding: 8px 16px;
     color: inherit;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: 700;
     white-space: nowrap;
     cursor: pointer;
@@ -569,16 +570,20 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 1.05rem;
-    font-weight: 600;
+    margin-left: 6px;
+    padding: 4px 8px;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.85;
     cursor: pointer;
 }
 
 .clear-filter-btn {
     flex-shrink: 0;
-    padding: 10px 16px;
+    padding: 6px 14px;
     color: var(--accent-1);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
@@ -594,9 +599,10 @@ body {
 }
 
 .export-btn {
-    padding: 10px 18px;
+    flex-shrink: 0;
+    padding: 8px 16px;
     color: #fff;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 700;
     white-space: nowrap;
     cursor: pointer;
