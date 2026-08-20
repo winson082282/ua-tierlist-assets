@@ -507,6 +507,73 @@ body {
     pointer-events: none;
 }
 
+/* =========================
+   排序方式（radio button）
+========================= */
+.sort-filter-group {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    overflow: visible;
+}
+
+.sort-option {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex-shrink: 0;
+    padding: 10px 20px;
+    color: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.7);
+    border: 2px solid rgba(93, 74, 56, 0.2);
+    border-radius: 999px;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.sort-option:hover {
+    transform: translateY(-1px);
+}
+
+.sort-option input[type="radio"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.sort-option span {
+    pointer-events: none;
+}
+
+.sort-option:has(input:checked) {
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-2) 0%, var(--accent-3) 100%);
+    border-color: var(--accent-1);
+    box-shadow: 0 3px 10px rgba(193, 122, 106, 0.35);
+}
+
+.diff-priority-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
 .clear-filter-btn {
     flex-shrink: 0;
     padding: 10px 16px;

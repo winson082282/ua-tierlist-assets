@@ -25,6 +25,8 @@ const colorOrder = {
 
 let allCards = []; // 儲存所有牌組資料
 let imageObserver = null;
+let currentSortMode = 'color'; // 'color'：顏色優先；'date'：時間優先
+let prioritizeDiffBadge = true; // 是否將有 diff-badge 的卡片排在同分數段最前面
 
 function loadDeckImage(img) {
     if (!img || img.dataset.loaded === 'true') return;
@@ -362,7 +364,7 @@ function bootstrapTierList() {
             return cards;
         })
     ])
-        .then(function ([filterOptions, cards]) {
+    .then(function ([filterOptions, cards]) {
             allCards = cards;
             setLoadingText('正在繪製天梯表...');
             renderCards(allCards);
@@ -387,15 +389,31 @@ function bootstrapTierList() {
             const colorContainer = document.getElementById('color-checkboxes');
             if (colorContainer) colorContainer.addEventListener('change', triggerFilter);
 
+            // 排序方式／異動優先切換（事件代理）：重繪天梯表後需重新套用目前的篩選狀態
+            const sortRadioGroup = document.getElementById('sort-radio-group');
+            if (sortRadioGroup) {
+                sortRadioGroup.addEventListener('change', function (e) {
+                    if (e.target.id === 'diff-priority-checkbox') {
+                        prioritizeDiffBadge = e.target.checked;
+                    } else if (e.target.name === 'sort-mode') {
+                        currentSortMode = e.target.value;
+                    } else {
+                        return;
+                    }
+                    renderCards(allCards);
+                    triggerFilter();
+                });
+            }
+
             // 讓初始畫面和目前篩選狀態一致。
             triggerFilter();
-        })
-        .catch(function (err) {
-            setLoadingText('資料載入失敗，請重新整理頁面。');
-            console.error('[ERROR] 完整錯誤訊息：', err.message);
-            console.error('[ERROR] 完整堆疊：', err.stack);
-            console.error('Google Sheet 讀取錯誤：', err);
-        });
+    })
+    .catch(function (err) {
+        setLoadingText('資料載入失敗，請重新整理頁面。');
+        console.error('[ERROR] 完整錯誤訊息：', err.message);
+        console.error('[ERROR] 完整堆疊：', err.stack);
+        console.error('Google Sheet 讀取錯誤：', err);
+    });
 }
 
 if (document.readyState === 'loading') {
@@ -511,6 +529,31 @@ function compareCardsForSort(a, b) {
     return bDate - aDate;
 }
 
+// --- 分數段內排序：1. 出售日期倒序（新到舊，空白排最前） 2. 顏色（黃→藍→紫→綠→紅） ---
+function compareCardsByDateFirst(a, b) {
+    const aDate = parseReleaseDate(a.releaseDate);
+    const bDate = parseReleaseDate(b.releaseDate);
+    let dateDiff;
+    if (!aDate && !bDate) dateDiff = 0;
+    else if (!aDate) dateDiff = -1;
+    else if (!bDate) dateDiff = 1;
+    else dateDiff = bDate - aDate;
+    if (dateDiff !== 0) return dateDiff;
+
+    return (colorOrder[a.color] ?? 999) - (colorOrder[b.color] ?? 999);
+}
+
+// --- comparator 包裝：啟用時把有 diff 的卡片排在同分數段最前面 ---
+function withDiffPriority(baseComparator, enabled) {
+    if (!enabled) return baseComparator;
+    return function (a, b) {
+        const aHas = String(a.diff || '').trim() !== '' ? 0 : 1;
+        const bHas = String(b.diff || '').trim() !== '' ? 0 : 1;
+        if (aHas !== bHas) return aHas - bHas;
+        return baseComparator(a, b);
+    };
+}
+
 // --- CSV 單行欄位解析（正確處理引號） ---
 function parseCSVLine(line) {
     const fields = [];
@@ -546,7 +589,9 @@ function renderCards(cards) {
         html += `  <div class="tier-label">${score}分</div>`;
         html += `  <div class="tier-content">`;
 
-        cards.filter(c => c.score === score).sort(compareCardsForSort).forEach(card => {
+        const baseComparator = currentSortMode === 'date' ? compareCardsByDateFirst : compareCardsForSort;
+        const comparator = withDiffPriority(baseComparator, prioritizeDiffBadge);
+        cards.filter(c => c.score === score).sort(comparator).forEach(card => {
             const colorClass = colorMap[card.color] || '';
             const isLazyCard = scoreIndex >= 3;
             const img = buildCardImg(card, isLazyCard);

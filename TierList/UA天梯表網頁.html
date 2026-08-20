@@ -46,6 +46,23 @@
             <button type="button" id="clear-color-filter" class="clear-filter-btn">清除顏色</button>
           </div>
         </div>
+        <div class="filter-item sort-filter-item">
+          <label class="filter-title">排序方式：</label>
+          <div id="sort-radio-group" class="sort-filter-group">
+            <label class="sort-option">
+              <input type="radio" name="sort-mode" value="color" id="sort_radio_color" checked>
+              <span>依顏色排序</span>
+            </label>
+            <label class="sort-option">
+              <input type="radio" name="sort-mode" value="date" id="sort_radio_date">
+              <span>依時間排序</span>
+            </label>
+            <label class="diff-priority-option">
+              <input type="checkbox" id="diff-priority-checkbox" checked>
+              <span>異動優先</span>
+            </label>
+          </div>
+        </div>
       </div>
       <div>
         <button type="button" id="export-image-btn" class="export-btn">📸 匯出圖片</button>
