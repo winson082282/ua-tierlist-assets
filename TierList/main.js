@@ -281,12 +281,14 @@ function setupFilterSectionToggle() {
     });
 }
 
-function setLoadingText(text) {
+function setLoadingText(text, isFinished = false) {
     const displayValue = !!(text && text.trim()) ? '' : 'none';
     const loadingEl = document.getElementById('card-loading');
     const loadingRowEl = document.querySelector('.loading-row');
+    const loaderEl = document.querySelector('.loader');
 
     loadingRowEl.style.display = displayValue;
+    loaderEl.style.display = isFinished ? 'none' : '';
     loadingEl.textContent = text;
 }
 
@@ -371,7 +373,6 @@ function bootstrapTierList() {
             setLoadingText('正在初始化篩選器...');
             initSeriesFilter(filterOptions);
             if (syncFilterSpacerHeight) syncFilterSpacerHeight();
-            setLoadingText('');
 
             // 統一的篩選觸發函式：分類篩選與顏色篩選共用
             function triggerFilter() {
@@ -406,10 +407,12 @@ function bootstrapTierList() {
             }
 
             // 讓初始畫面和目前篩選狀態一致。
+            setLoadingText('正在排列...');
             triggerFilter();
+            setLoadingText('', true);
     })
     .catch(function (err) {
-        setLoadingText('資料載入失敗，請重新整理頁面。');
+        setLoadingText('資料載入失敗，請重新整理頁面。', true);
         console.error('[ERROR] 完整錯誤訊息：', err.message);
         console.error('[ERROR] 完整堆疊：', err.stack);
         console.error('Google Sheet 讀取錯誤：', err);
