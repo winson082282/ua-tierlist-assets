@@ -626,7 +626,7 @@ body {
 /* =========================
    天梯主體
 ========================= */
-.tier-rows {
+.tier-list-surface {
     position: relative;
     z-index: 1;
     display: flex;
@@ -637,6 +637,12 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.tier-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .tier-row {

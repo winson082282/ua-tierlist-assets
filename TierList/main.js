@@ -675,7 +675,7 @@ function filterCards(selectedSeries, selectedColors) {
 
 // --- 匯出目前畫面的天梯表為 PNG 圖片 ---
 async function exportTierListImage() {
-    const target = document.getElementById('tier-rows-container');
+    const target = document.querySelector('.tier-list-surface');
     const btn = document.getElementById('export-image-btn');
     if (!target || !btn) return;
 
