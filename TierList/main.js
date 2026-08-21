@@ -301,6 +301,61 @@ function setLoadingText(text, isFinished = false) {
     loadingEl.textContent = decodedText;
 }
 
+function updateDownloadProgress(progressKey, receivedBytes, totalBytes, isFinished) {
+    const progressEl = document.getElementById(progressKey + '-progress');
+    const textEl = document.getElementById(progressKey + '-progress-text');
+    if (!progressEl || !textEl) return;
+
+    if (isFinished) {
+        progressEl.value = 100;
+        textEl.textContent = '下載完成';
+        return;
+    }
+
+    if (totalBytes > 0) {
+        progressEl.value = Math.min(100, receivedBytes / totalBytes * 100);
+        textEl.textContent = Math.round(receivedBytes / totalBytes * 100) + '%';
+    } else {
+        progressEl.removeAttribute('value');
+        textEl.textContent = Math.round(receivedBytes / 1024) + ' KB';
+    }
+}
+
+async function fetchTextWithProgress(url, progressKey) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+    if (!response.body || !response.body.getReader) {
+        const text = await response.text();
+        updateDownloadProgress(progressKey, text.length, 0, true);
+        return text;
+    }
+
+    const reader = response.body.getReader();
+    const totalBytes = Number(response.headers.get('content-length')) || 0;
+    const chunks = [];
+    let receivedBytes = 0;
+    updateDownloadProgress(progressKey, 0, totalBytes, false);
+
+    while (true) {
+        const result = await reader.read();
+        if (result.done) break;
+        chunks.push(result.value);
+        receivedBytes += result.value.length;
+        updateDownloadProgress(progressKey, receivedBytes, totalBytes, false);
+    }
+
+    const bytes = new Uint8Array(receivedBytes);
+    let offset = 0;
+    chunks.forEach(function (chunk) {
+        bytes.set(chunk, offset);
+        offset += chunk.length;
+    });
+
+    updateDownloadProgress(progressKey, receivedBytes, totalBytes, true);
+    return new TextDecoder().decode(bytes);
+}
+
 function getSeriesFilterValues() {
     if (!seriesFilterEl) return [];
     const currentValue = seriesFilterEl.value;
@@ -437,10 +492,8 @@ if (document.readyState === 'loading') {
 
 // 從選項分頁動態載入選項陣列
 async function loadSeriesFilterOptions() {
-    const response = await fetch(FILTER_OPTIONS_URL);
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-
-    const csvText = await response.text();
+    const csvText = await fetchTextWithProgress(FILTER_OPTIONS_URL, 'filter-options');
+    setLoadingText('系列資料成功載入，正在解析...');
     const lines = csvText.trim().split('\n');
     const groupMap = {}; // { groupName: [...options] }
     const ungroupedOptions = [];
@@ -488,12 +541,8 @@ async function loadSeriesFilterOptions() {
 
 // --- 從 Google Sheet 讀取卡片資料 ---
 async function loadCardsFromSheet() {
-    const response = await fetch(SHEET_CSV_URL);
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-
-    setLoadingText('卡片csv成功載入，正在解析資料...');
-
-    const csvText = await response.text();
+    const csvText = await fetchTextWithProgress(SHEET_CSV_URL, 'sheet-csv');
+    setLoadingText('卡片資料成功載入，正在解析...');
     const lines = csvText.trim().split('\n');
     const cards = [];
 

@@ -139,10 +139,52 @@ body {
     padding: 12px 0;
 }
 
+.loading-details {
+    min-width: min(100%, 420px);
+}
+
+.download-progress-group {
+    display: grid;
+    gap: 5px;
+    margin-top: 8px;
+    font-size: 0.82rem;
+}
+
+.download-progress-item {
+    display: grid;
+    grid-template-columns: 72px minmax(100px, 1fr) 92px;
+    align-items: center;
+    gap: 7px;
+}
+
+.download-progress-item progress {
+    width: 100%;
+    height: 8px;
+}
+
+.download-progress-item span:last-child {
+    color: var(--text-sub);
+    text-align: right;
+    white-space: nowrap;
+}
+
 #card-loading {
     text-align: left;
     padding: 0;
     line-height: 1.4;
+}
+
+@media (max-width: 560px) {
+    .loading-details {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .download-progress-item {
+        grid-template-columns: 62px minmax(70px, 1fr) 82px;
+        gap: 5px;
+        font-size: 0.76rem;
+    }
 }
 
 /* =========================

@@ -72,7 +72,21 @@
   <div class="tier-list-surface">
     <div class="loading-row" data-html2canvas-ignore="true">
       <div class="loader"></div>
-      <div id="card-loading"></div>
+      <div class="loading-details">
+        <div id="card-loading"></div>
+        <div class="download-progress-group" aria-live="polite">
+          <div class="download-progress-item">
+            <span>系列選項</span>
+            <progress id="filter-options-progress" max="100" value="0"></progress>
+            <span id="filter-options-progress-text">等待下載</span>
+          </div>
+          <div class="download-progress-item">
+            <span>卡片資料</span>
+            <progress id="sheet-csv-progress" max="100" value="0"></progress>
+            <span id="sheet-csv-progress-text">等待下載</span>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="tier-rows-container" class="tier-rows"></div>
   </div>
