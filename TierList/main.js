@@ -282,14 +282,23 @@ function setupFilterSectionToggle() {
 }
 
 function setLoadingText(text, isFinished = false) {
-    const displayValue = !!(text && text.trim()) ? '' : 'none';
+    const decodedText = String(text || '')
+        .replace(/&(?:#(\d+)|#x([\da-f]+)|([a-z][\da-z]+));/gi, function (entity, decimal, hexadecimal, named) {
+            if (decimal) return String.fromCodePoint(Number(decimal));
+            if (hexadecimal) return String.fromCodePoint(parseInt(hexadecimal, 16));
+
+            const decoder = document.createElement('textarea');
+            decoder.innerHTML = entity;
+            return decoder.value;
+        });
+    const displayValue = decodedText.trim() ? '' : 'none';
     const loadingEl = document.getElementById('card-loading');
     const loadingRowEl = document.querySelector('.loading-row');
     const loaderEl = document.querySelector('.loader');
 
     loadingRowEl.style.display = displayValue;
     loaderEl.style.display = isFinished ? 'none' : '';
-    loadingEl.textContent = text;
+    loadingEl.textContent = decodedText;
 }
 
 function getSeriesFilterValues() {
