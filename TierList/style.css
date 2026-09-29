@@ -991,7 +991,7 @@ body {
     }
 
     .tier-content {
-        grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
         gap: 6px;
         padding: 10px;
     }
