@@ -530,7 +530,7 @@ async function loadSeriesFilterOptions() {
 
     // 先加 grouped options（倒序）
     Object.entries(groupMap).reverse().forEach(([groupName, options]) => {
-        result.push({ label: `發售年度: ${groupName}`, options: options });
+        result.push({ label: `發售年度: ${groupName}`, options: [...options].reverse() });
     });
 
     // 再加 ungrouped options
