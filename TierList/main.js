@@ -514,7 +514,8 @@ async function loadSeriesFilterOptions() {
         const average = fields[5] ? fields[5].trim() : '—';
         const highest = fields[6] ? fields[6].trim() : '—';
         const lowest = fields[7] ? fields[7].trim() : '—';
-        const description = `${alias} 數量: ${count}個 · 平均分數: ${average} · 最高分數: ${highest} · 最低分數: ${lowest}`;
+        const description_old = `${alias} 數量: ${count}個 · 平均分數: ${average} · 最高分數: ${highest} · 最低分數: ${lowest}`;
+        const description = `數量: ${count}個 · 最高: ${highest}分 · 最低: ${lowest}分`;
         const option = { value: value, label: label, description: description, alias: alias };
 
         if (group) {
