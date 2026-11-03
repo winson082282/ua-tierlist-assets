@@ -412,7 +412,7 @@ function bootstrapTierList() {
         });
     }
 
-    // 「匯出圖片」按鈕：將目前畫面的天梯表（含篩選結果）匯出成 PNG 圖片
+    // 「匯出圖片」按鈕：將目前畫面的分數表（含篩選結果）匯出成 PNG 圖片
     const exportImageBtn = document.getElementById('export-image-btn');
     if (exportImageBtn) {
         exportImageBtn.addEventListener('click', exportTierListImage);
@@ -426,13 +426,13 @@ function bootstrapTierList() {
             return opts;
         }),
         loadCardsFromSheet().then(function (cards) {
-            setLoadingText('卡片資料載入完成（共 ' + cards.length + ' 張），正在繪製天梯表...');
+            setLoadingText('卡片資料載入完成（共 ' + cards.length + ' 張），正在繪製分數表...');
             return cards;
         })
     ])
     .then(function ([filterOptions, cards]) {
             allCards = cards;
-            setLoadingText('正在繪製天梯表...');
+            setLoadingText('正在繪製分數表...');
             renderCards(allCards);
             setLoadingText('正在初始化篩選器...');
             initSeriesFilter(filterOptions);
@@ -454,7 +454,7 @@ function bootstrapTierList() {
             const colorContainer = document.getElementById('color-checkboxes');
             if (colorContainer) colorContainer.addEventListener('change', triggerFilter);
 
-            // 排序方式／異動優先切換（事件代理）：重繪天梯表後需重新套用目前的篩選狀態
+            // 排序方式／異動優先切換（事件代理）：重繪分數表後需重新套用目前的篩選狀態
             const sortRadioGroup = document.getElementById('sort-radio-group');
             if (sortRadioGroup) {
                 sortRadioGroup.addEventListener('change', function (e) {
@@ -640,7 +640,7 @@ function parseCSVLine(line) {
     return fields;
 }
 
-// --- 動態產生天梯表 HTML ---
+// --- 動態產生分數表 HTML ---
 function renderCards(cards) {
     const scores = [...new Set(cards.map(c => c.score))].sort((a, b) => b - a);
     const container = document.getElementById('tier-rows-container');
@@ -723,7 +723,7 @@ function filterCards(selectedSeries, selectedColors) {
     });
 }
 
-// --- 匯出目前畫面的天梯表為 PNG 圖片 ---
+// --- 匯出目前畫面的分數表為 PNG 圖片 ---
 async function exportTierListImage() {
     const target = document.querySelector('.tier-list-surface');
     const btn = document.getElementById('export-image-btn');
@@ -759,7 +759,7 @@ async function exportTierListImage() {
         const pad = n => String(n).padStart(2, '0');
         const now = new Date();
         const timestamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '_' + pad(now.getHours()) + pad(now.getMinutes());
-        link.download = `UA天梯表_${timestamp}.png`;
+        link.download = `水鬼遠征隊_特殊賽分數表_${timestamp}.png`;
         link.href = canvas.toDataURL('image/png');
         document.body.appendChild(link);
         link.click();
