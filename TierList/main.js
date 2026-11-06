@@ -25,7 +25,7 @@ const colorOrder = {
 
 let allCards = []; // 儲存所有牌組資料
 let imageObserver = null;
-let currentSortMode = 'color'; // 'color'：顏色優先；'date'：時間優先
+let currentSortMode = 'color'; // 'color'：顏色優先；'first'：初彈；'latest'：最新彈；'latestPR'：最新彈(含點卡)
 let prioritizeDiffBadge = true; // 是否將有 diff-badge 的卡片排在同分數段最前面
 
 function loadDeckImage(img) {
@@ -593,19 +593,28 @@ function compareCardsForSort(a, b) {
     return bDate - aDate;
 }
 
-// --- 分數段內排序：1. 出售日期倒序（新到舊，空白排最前） 2. 顏色（黃→藍→紫→綠→紅） ---
-function compareCardsByDateFirst(a, b) {
-    const aDate = parseReleaseDate(a.firstReleaseDate);
-    const bDate = parseReleaseDate(b.firstReleaseDate);
-    let dateDiff;
-    if (!aDate && !bDate) dateDiff = 0;
-    else if (!aDate) dateDiff = -1;
-    else if (!bDate) dateDiff = 1;
-    else dateDiff = bDate - aDate;
-    if (dateDiff !== 0) return dateDiff;
+// --- 分數段內排序（依指定日期欄位）：1. 日期倒序（新到舊，空白排最前） 2. 顏色（黃→藍→紫→綠→紅） ---
+function makeDateFirstComparator(field) {
+    return function (a, b) {
+        const aDate = parseReleaseDate(a[field]);
+        const bDate = parseReleaseDate(b[field]);
+        let dateDiff;
+        if (!aDate && !bDate) dateDiff = 0;
+        else if (!aDate) dateDiff = -1;
+        else if (!bDate) dateDiff = 1;
+        else dateDiff = bDate - aDate;
+        if (dateDiff !== 0) return dateDiff;
 
-    return (colorOrder[a.color] ?? 999) - (colorOrder[b.color] ?? 999);
+        return (colorOrder[a.color] ?? 999) - (colorOrder[b.color] ?? 999);
+    };
 }
+
+const comparatorBySortMode = {
+    color: compareCardsForSort,
+    first: makeDateFirstComparator('firstReleaseDate'),
+    latest: makeDateFirstComparator('latestReleaseDate'),
+    latestPR: makeDateFirstComparator('latestReleaseDateWithPR')
+};
 
 // --- comparator 包裝：啟用時把有 diff 的卡片排在同分數段最前面 ---
 function withDiffPriority(baseComparator, enabled) {
@@ -653,7 +662,7 @@ function renderCards(cards) {
         html += `  <div class="tier-label">${score}分</div>`;
         html += `  <div class="tier-content">`;
 
-        const baseComparator = currentSortMode === 'date' ? compareCardsByDateFirst : compareCardsForSort;
+        const baseComparator = comparatorBySortMode[currentSortMode] || compareCardsForSort;
         const comparator = withDiffPriority(baseComparator, prioritizeDiffBadge);
         cards.filter(c => c.score === score).sort(comparator).forEach(card => {
             const colorClass = colorMap[card.color] || '';
