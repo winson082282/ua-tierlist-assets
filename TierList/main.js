@@ -560,12 +560,14 @@ async function loadCardsFromSheet() {
         const color = fields[4] ? fields[4].trim() : '';
         const iconName = fields[5] ? fields[5].trim() : '';
         const PostimgID = fields[6] ? fields[6].trim() : null;
-        const releaseDate = fields[7] ? fields[7].trim() : '';
-        const href = fields[8] ? fields[8].trim() : null;
+        const firstReleaseDate = fields[7] ? fields[7].trim() : '';
+        const latestReleaseDate = fields[8] ? fields[8].trim() : '';
+        const latestReleaseDateWithPR = fields[9] ? fields[9].trim() : '';
+        const href = fields[10] ? fields[10].trim() : null;
         const src = iconName ? imgurl + PostimgID + '/' + iconName + '.jpg' : '';
 
         if (!isNaN(score) && src) {
-            cards.push({ score, color, series, diff, src, href: href || null, releaseDate });
+            cards.push({ score, color, series, diff, src, href: href || null, firstReleaseDate, latestReleaseDate, latestReleaseDateWithPR });
         }
     }
     return cards;
@@ -583,8 +585,8 @@ function compareCardsForSort(a, b) {
     const colorDiff = (colorOrder[a.color] ?? 999) - (colorOrder[b.color] ?? 999);
     if (colorDiff !== 0) return colorDiff;
 
-    const aDate = parseReleaseDate(a.releaseDate);
-    const bDate = parseReleaseDate(b.releaseDate);
+    const aDate = parseReleaseDate(a.firstReleaseDate);
+    const bDate = parseReleaseDate(b.firstReleaseDate);
     if (!aDate && !bDate) return 0;
     if (!aDate) return -1;
     if (!bDate) return 1;
@@ -593,8 +595,8 @@ function compareCardsForSort(a, b) {
 
 // --- 分數段內排序：1. 出售日期倒序（新到舊，空白排最前） 2. 顏色（黃→藍→紫→綠→紅） ---
 function compareCardsByDateFirst(a, b) {
-    const aDate = parseReleaseDate(a.releaseDate);
-    const bDate = parseReleaseDate(b.releaseDate);
+    const aDate = parseReleaseDate(a.firstReleaseDate);
+    const bDate = parseReleaseDate(b.firstReleaseDate);
     let dateDiff;
     if (!aDate && !bDate) dateDiff = 0;
     else if (!aDate) dateDiff = -1;
